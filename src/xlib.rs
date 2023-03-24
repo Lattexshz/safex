@@ -95,7 +95,7 @@ impl WindowAttributesBuilder {
         Self { attributes }
     }
 
-    pub fn override_redirect(&mut self, b: bool) -> &mut self {
+    pub fn override_redirect(mut self, b: bool) -> Self {
         self.attributes.override_redirect = b as i32;
         self
     }
@@ -132,7 +132,7 @@ impl Window {
         unsafe {
             let parent = match parent {
                 None => 0,
-                Some(p) => p,
+                Some(p) => p.window,
             };
 
             let window = XCreateWindow(
@@ -160,7 +160,7 @@ impl Window {
         }
     }
 
-    pub fn run<F>(&self, func: F)
+    pub fn run<F>(&self, func: F,display:&Display)
     where
         F: Fn(WindowEvent, &mut ControlFlow),
     {
@@ -169,7 +169,7 @@ impl Window {
 
             let mut control_flow = ControlFlow::Wait;
             loop {
-                XNextEvent(display, &mut event);
+                XNextEvent(display.display, &mut event);
 
                 match event.type_ {
                     Expose => {

@@ -25,5 +25,5 @@ fn main() {
     window.map(&display);
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {}
-    })
+    },&display)
 }
