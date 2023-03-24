@@ -1,5 +1,5 @@
 use crate::util::str_to_c_char;
-use std::ffi::{c_int, c_uint, c_ulong, CStr};
+use std::ffi::{c_char, c_int, c_uint, c_ulong, CStr};
 use std::ptr::null_mut;
 use x11::xlib::*;
 
@@ -23,7 +23,7 @@ macro_rules! cast {
 // EventMasks
 export!(NoEventMask,EventMask);
 export!(KeyPressMask,EventMask);
-export!(KeyReleaseMask,Eventmask);
+export!(KeyReleaseMask,EventMask);
 export!(ButtonPressMask,EventMask);
 export!(ButtonReleaseMask,EventMask);
 export!(EnterWindowMask,EventMask);
@@ -65,7 +65,7 @@ export!(CWBackingPlanes,WindowAttribute);
 export!(CWOverrideRedirect,WindowAttribute);
 export!(CWSaveUnder,WindowAttribute);
 export!(CWEventMask,WindowAttribute);
-export!(CWDontPropgate,WindowAttribute);
+export!(CWDontPropagate,WindowAttribute);
 export!(CWColormap,WindowAttribute);
 export!(CWCursor,WindowAttribute);
 
@@ -289,7 +289,7 @@ impl Window {
 
     pub fn set_window_title(&self,title: &str) {
         unsafe {
-            XStoreName(self.display,self.window,str_to_c_char(title));
+            XStoreName(self.display,self.window,str_to_c_char(title) as *mut c_char);
         }
     }
 

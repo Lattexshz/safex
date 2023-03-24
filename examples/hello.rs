@@ -18,9 +18,11 @@ fn main() {
         24,
         InputOutput,
         &visual,
-        0,
+        CWBackPixel,
         attributes,
     );
+
+    window.set_window_title("Hello World");
 
     window.map(&display);
     window.run(|event, control_flow| match event {
