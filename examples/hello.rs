@@ -6,7 +6,7 @@ fn main() {
     let root = Window::root_window(&display, &screen);
     let visual = Visual::default(&display, &screen);
 
-    let attributes = WindowAttributesBuilder::new();
+    let attributes = WindowAttributesBuilder::new().background_pixel(Pixel::white(&display,&screen));
     let window = Window::create(
         &display,
         Some(root),
@@ -16,7 +16,7 @@ fn main() {
         500,
         1,
         24,
-        0,
+        InputOutput,
         &visual,
         0,
         attributes,
@@ -25,5 +25,5 @@ fn main() {
     window.map(&display);
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {}
-    },&display)
+    })
 }

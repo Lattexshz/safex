@@ -5,19 +5,86 @@ use x11::xlib::*;
 
 type _Window = c_ulong;
 
-pub type Mask = c_ulong;
+pub type EventMask = c_ulong;
 
+// Re-Exports
 macro_rules! export {
     ($cons:ident,$type_:ident) => {
-        pub const $cons:$type_ = x11::xib::$cons;
+        pub const $cons:$type_ = x11::xlib::$cons as $type_;
     }
 }
 
-export!(ExposureMask,Mask);
+macro_rules! cast {
+    ($val:ident,$type_:ty) => {
+        $val as $type_
+    }
+}
+
+// EventMasks
+export!(NoEventMask,EventMask);
+export!(KeyPressMask,EventMask);
+export!(KeyReleaseMask,Eventmask);
+export!(ButtonPressMask,EventMask);
+export!(ButtonReleaseMask,EventMask);
+export!(EnterWindowMask,EventMask);
+export!(LeaveWindowMask,EventMask);
+export!(PointerMotionMask,EventMask);
+export!(PointerMotionHintMask,EventMask);
+export!(Button1MotionMask,EventMask);
+export!(Button2MotionMask,EventMask);
+export!(Button3MotionMask,EventMask);
+export!(Button4MotionMask,EventMask);
+export!(Button5MotionMask,EventMask);
+export!(KeymapStateMask,EventMask);
+export!(ExposureMask,EventMask);
+export!(VisibilityChangeMask,EventMask);
+export!(StructureNotifyMask,EventMask);
+export!(ResizeRedirectMask,EventMask);
+export!(SubstructureNotifyMask,EventMask);
+export!(SubstructureRedirectMask,EventMask);
+export!(FocusChangeMask,EventMask);
+export!(PropertyChangeMask,EventMask);
+export!(ColormapChangeMask,EventMask);
+export!(OwnerGrabButtonMask,EventMask);
+
+pub type WindowClass = c_uint;
+
+export!(InputOutput,WindowClass);
+export!(InputOnly,WindowClass);
+
+pub type WindowAttribute = c_ulong;
+
+export!(CWBackPixmap,WindowAttribute);
+export!(CWBackPixel,WindowAttribute);
+export!(CWBorderPixmap,WindowAttribute);
+export!(CWBorderPixel,WindowAttribute);
+export!(CWBitGravity,WindowAttribute);
+export!(CWWinGravity,WindowAttribute);
+export!(CWBackingStore,WindowAttribute);
+export!(CWBackingPlanes,WindowAttribute);
+export!(CWOverrideRedirect,WindowAttribute);
+export!(CWSaveUnder,WindowAttribute);
+export!(CWEventMask,WindowAttribute);
+export!(CWDontPropgate,WindowAttribute);
+export!(CWColormap,WindowAttribute);
+export!(CWCursor,WindowAttribute);
 
 pub enum ControlFlow {
     Wait,
     Exit,
+}
+
+pub struct ColorMap {
+    cmap: c_ulong
+}
+
+impl ColorMap {
+    pub fn default(display:&Display,screen:&Screen) -> Self {
+        let cmap = unsafe { XDefaultColormap(display.display,screen.screen) };
+        Self {
+            cmap
+        }
+    }
 }
 
 pub struct Display {
@@ -77,6 +144,41 @@ impl Drop for Display {
     }
 }
 
+pub struct Geometry {
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    pub border_width: u32,
+    pub depth:u32
+}
+
+pub struct Pixel {
+    pixel:c_ulong
+}
+
+impl Pixel {
+    pub fn black(display:&Display,screen:&Screen) -> Self {
+        let pixel = unsafe { XBlackPixel(display.display,screen.screen) };
+
+        Self {
+            pixel
+        }
+    }
+    pub fn white(display:&Display,screen:&Screen) -> Self {
+        let pixel = unsafe { XWhitePixel(display.display,screen.screen) };
+
+        Self {
+            pixel
+        }
+    }
+    pub fn from_rgb(r:u8,g:u8,b:u8) -> Self {
+        Self {
+            pixel: 0
+        }
+    }
+}
+
 pub struct Screen {
     screen: c_int,
 }
@@ -119,6 +221,16 @@ impl WindowAttributesBuilder {
         self.attributes.override_redirect = b as i32;
         self
     }
+
+    pub fn background_pixel(mut self,pixel: Pixel) -> Self {
+        self.attributes.background_pixel = pixel.pixel;
+        self
+    }
+
+    pub fn backing_pixel(mut self,pixel: Pixel) -> Self {
+        self.attributes.backing_pixel = pixel.pixel;
+        self
+    }
 }
 
 pub enum WindowEvent {
@@ -145,9 +257,9 @@ impl Window {
         height: u32,
         border_width: u32,
         depth: i32,
-        class: u32,
+        class: WindowClass,
         visual: &Visual,
-        valuemask: u64,
+        valuemask: WindowAttribute,
         mut attributes: WindowAttributesBuilder,
     ) -> Self {
         unsafe {
@@ -175,13 +287,42 @@ impl Window {
         }
     }
 
+    pub fn set_window_title(&self,title: &str) {
+        unsafe {
+            XStoreName(self.display,self.window,str_to_c_char(title));
+        }
+    }
+
+    pub fn get_geometry(&self) -> Geometry {
+        unsafe {
+            let root = null_mut();
+            let x = null_mut();
+            let y = null_mut();
+            let width = null_mut();
+            let height = null_mut();
+            let border_width = null_mut();
+            let depth = null_mut();
+
+            XGetGeometry(self.display, self.window, root, x,y,width,height,border_width,depth);
+
+            Geometry {
+                x: cast!(x,i32),
+                y: cast!(y,i32),
+                width: cast!(width,u32),
+                height: cast!(height,u32),
+                border_width: cast!(border_width,u32),
+                depth: cast!(depth,u32),
+            }
+        }
+    }
+
     pub fn map(&self, display: &Display) {
         unsafe {
             XMapWindow(display.display, self.window);
         }
     }
 
-    pub fn run<F>(&self, func: F,display:&Display)
+    pub fn run<F>(&self, func: F)
     where
         F: Fn(WindowEvent, &mut ControlFlow),
     {
@@ -190,7 +331,7 @@ impl Window {
 
             let mut control_flow = ControlFlow::Wait;
             loop {
-                XNextEvent(display.display, &mut event);
+                XNextEvent(self.display, &mut event);
 
                 match event.type_ {
                     Expose => {
