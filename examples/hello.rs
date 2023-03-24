@@ -9,6 +9,7 @@ fn main() {
     let attributes = WindowAttributesBuilder::new().background_pixel(Pixel::white(&display,&screen));
     let window = Window::create(
         &display,
+        &screen,
         Some(root),
         0,
         0,

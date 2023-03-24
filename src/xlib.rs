@@ -292,6 +292,7 @@ impl Window {
 
     pub fn create(
         display: &Display,
+        screen: &Screen,
         parent: Option<Window>,
         x: i32,
         y: i32,
