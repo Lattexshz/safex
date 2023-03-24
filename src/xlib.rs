@@ -429,12 +429,24 @@ impl Window {
             }
         }
     }
+
+    pub unsafe fn from_raw(display:&Display,screen:&Screen,window:c_ulong) -> Self {
+        let gc = XDefaultGC(display.display,screen.screen);
+
+        Self {
+            window,
+            display: display.display,
+            gc,
+        }
+    }
 }
 
 impl Drop for Window {
     fn drop(&mut self) {
         unsafe {
-            XDestroyWindow(self.display,self.window);
+            if self.window != 0 {
+                XDestroyWindow(self.display,self.window);
+            }
         }
     }
 }

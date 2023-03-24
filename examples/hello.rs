@@ -12,7 +12,6 @@ fn main() {
 
     window.set_window_title("Hello World");
 
-
     window.map(&display);
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {}
