@@ -332,6 +332,33 @@ impl Window {
         }
     }
 
+    pub fn create_simple(display: &Display,
+                         screen: &Screen,
+                         parent: Option<Window>,
+                         x: i32,
+                         y: i32,
+                         width: u32,
+                         height: u32,
+                         border_width: u32,
+                         border:u64,
+    pixel: Pixel) -> Self {
+        unsafe {
+            let parent = match parent {
+                None => 0,
+                Some(p) => p.window,
+            };
+
+            let gc = XDefaultGC(display.display,screen.screen);
+
+            let window = XCreateSimpleWindow(display.display,parent,x as c_int,y as c_int,width as c_uint,height as c_uint,border_width as c_uint,border as c_ulong,pixel.pixel);
+            Self {
+                window,
+                display:display.display,
+                gc
+            }
+        }
+    }
+
     pub fn set_window_title(&self,title: &str) {
         unsafe {
             let title_str = CString::new(title).unwrap();
