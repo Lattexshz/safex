@@ -1,0 +1,18 @@
+[package]
+name = "safex"
+version = "0.0.3-2"
+edition = "2021"
+authors = ["Lattexshz"]
+description = "Safe x11 binding for rust"
+license = "MIT"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+glx = [ "x11/glx","xlib" ]
+
+xlib = [ "x11/xlib" ]
+
+[dependencies]
+x11 = { version = "2.21.0" }
