@@ -23,6 +23,9 @@ fn main() {
     );
 
     window.set_window_title("Hello World");
+    let cmap = ColorMap::default(&display,&screen);
+    let color = Color::from_rgb(&display,&cmap,65535,0,65535);
+    window.set_background_pixel(color.get_pixel());
 
     window.map(&display);
     window.run(|event, control_flow| match event {

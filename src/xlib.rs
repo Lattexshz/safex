@@ -1,6 +1,6 @@
 use crate::util::str_to_c_char;
-use std::ffi::{c_char, c_int, c_uint, c_ulong, CStr};
-use std::ptr::null_mut;
+use std::ffi::{c_char, c_int, c_uint, c_ulong, c_ushort, CStr, CString};
+use std::ptr::{addr_of, null_mut};
 use x11::xlib::*;
 
 type _Window = c_ulong;
@@ -74,6 +74,44 @@ pub enum ControlFlow {
     Exit,
 }
 
+#[derive(Clone,Copy,Debug,PartialEq)]
+pub struct Color<'a> {
+    pixel:Pixel,
+    red:u16,
+    green:u16,
+    blue:u16,
+    flags:&'a str,
+    pad:&'a str,
+}
+
+impl<'a> Color<'a> {
+    pub fn from_rgb(display:&Display,cmap:&ColorMap,r:u16,g:u16,b:u16) -> Self {
+        let mut color:XColor =
+            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+
+        color.red = r as c_ushort;
+        color.green = g as c_ushort;
+        color.blue = b as c_ushort;
+
+        unsafe {
+            XAllocColor(display.display,cmap.cmap,&mut color);
+        }
+
+        Self {
+            pixel: Pixel { pixel: color.pixel },
+            red: color.red as u16,
+            green: color.green as u16,
+            blue: color.blue as u16,
+            flags: unsafe { CStr::from_ptr(addr_of!(color.flags)).to_str().unwrap() },
+            pad: unsafe { CStr::from_ptr(addr_of!(color.pad)).to_str().unwrap() },
+        }
+    }
+
+    pub fn get_pixel(&self) -> Pixel {
+        self.pixel
+    }
+}
+
 pub struct ColorMap {
     cmap: c_ulong
 }
@@ -144,6 +182,7 @@ impl Drop for Display {
     }
 }
 
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Geometry {
     pub x: i32,
     pub y: i32,
@@ -153,6 +192,7 @@ pub struct Geometry {
     pub depth:u32
 }
 
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Pixel {
     pixel:c_ulong
 }
@@ -239,13 +279,15 @@ pub enum WindowEvent {
 
 pub struct Window {
     window: _Window,
-    display: *mut x11::xlib::Display
+    display: *mut x11::xlib::Display,
+    gc: GC
 }
 
 impl Window {
     pub fn root_window(display: &Display, screen: &Screen) -> Self {
         let window = unsafe { XRootWindow(display.display, screen.screen) };
-        Self { window,display:display.display }
+        let gc = unsafe { XDefaultGC(display.display,screen.screen) };
+        Self { window,display:display.display, gc }
     }
 
     pub fn create(
@@ -268,6 +310,8 @@ impl Window {
                 Some(p) => p.window,
             };
 
+            let gc = XDefaultGC(display.display,screen.screen);
+
             let window = XCreateWindow(
                 display.display,
                 parent,
@@ -283,13 +327,26 @@ impl Window {
                 &mut attributes.attributes,
             );
 
-            Self { window, display: display.display }
+            Self { window, display: display.display, gc }
         }
     }
 
     pub fn set_window_title(&self,title: &str) {
         unsafe {
-            XStoreName(self.display,self.window,str_to_c_char(title) as *mut c_char);
+            let title_str = CString::new(title).unwrap();
+            XStoreName(self.display,self.window,title_str.as_ptr() as *mut c_char);
+        }
+    }
+
+    pub fn set_background_pixel(&self,pixel:Pixel) {
+        unsafe {
+            XSetBackground(self.display,self.gc,pixel.pixel);
+        }
+    }
+
+    pub fn set_foreground_pixel(&self,pixel: Pixel) {
+        unsafe {
+            XSetForeground(self.display,self.gc,pixel.pixel);
         }
     }
 
