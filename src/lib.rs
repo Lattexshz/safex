@@ -1,4 +1,4 @@
-#[cfg(feature="xlib")]
+#[cfg(feature = "xlib")]
 pub mod xlib;
 
 pub(crate) mod util {
