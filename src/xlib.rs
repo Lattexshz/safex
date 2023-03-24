@@ -5,6 +5,16 @@ use x11::xlib::*;
 
 type _Window = c_ulong;
 
+pub type Mask = c_ulong;
+
+macro_rules! export {
+    ($cons:ident,$type_:ident) => {
+        pub const $cons:$type_ = x11::xib::$cons;
+    }
+}
+
+export!(ExposureMask,Mask);
+
 pub enum ControlFlow {
     Wait,
     Exit,
@@ -54,6 +64,16 @@ impl Display {
 
     pub fn from_raw(display: *mut x11::xlib::Display) -> Self {
         Self { display }
+    }
+}
+
+impl Drop for Display {
+    fn drop(&mut self) {
+        if !self.display.is_null() {
+            unsafe {
+                XCloseDisplay(self.display);
+            }
+        }
     }
 }
 
@@ -107,12 +127,13 @@ pub enum WindowEvent {
 
 pub struct Window {
     window: _Window,
+    display: *mut x11::xlib::Display
 }
 
 impl Window {
     pub fn root_window(display: &Display, screen: &Screen) -> Self {
         let window = unsafe { XRootWindow(display.display, screen.screen) };
-        Self { window }
+        Self { window,display:display.display }
     }
 
     pub fn create(
@@ -150,7 +171,7 @@ impl Window {
                 &mut attributes.attributes,
             );
 
-            Self { window }
+            Self { window, display: display.display }
         }
     }
 
@@ -180,6 +201,14 @@ impl Window {
                     }
                 }
             }
+        }
+    }
+}
+
+impl Drop for Window {
+    fn drop(&mut self) {
+        unsafe {
+            XDestroyWindow(self.display,self.window);
         }
     }
 }
