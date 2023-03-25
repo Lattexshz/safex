@@ -1,5 +1,6 @@
 use crate::util::str_to_c_char;
-use std::ffi::{c_char, c_int, c_uint, c_ulong, c_ushort, CStr, CString};
+use std::ffi::{c_char, c_int, c_uint, c_ulong,c_long, c_ushort, CStr, CString};
+use std::mem::MaybeUninit;
 use std::ptr::{addr_of, null_mut};
 use x11::xlib::*;
 
@@ -68,6 +69,16 @@ export!(CWEventMask, WindowAttribute);
 export!(CWDontPropagate, WindowAttribute);
 export!(CWColormap, WindowAttribute);
 export!(CWCursor, WindowAttribute);
+
+pub struct Arc {
+    pub x:u32,
+    pub y:u32,
+    pub width:u32,
+    pub height:u32,
+    pub angle1:u32,
+    pub angle2:u32,
+    pub pixel: Pixel
+}
 
 pub enum ControlFlow {
     Wait,
@@ -326,6 +337,7 @@ impl Window {
     pub fn root_window(display: &Display, screen: &Screen) -> Self {
         let window = unsafe { XRootWindow(display.display, screen.screen) };
         let gc = unsafe { XDefaultGC(display.display, screen.screen) };
+        unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
         Self {
             window,
             buffer: window,
@@ -378,6 +390,8 @@ impl Window {
                 Some(_) => PixMap::from_raw(&display, window, width, height, depth as u32).pixmap
             };
 
+            unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
+
             Self {
                 window,
                 buffer,
@@ -419,13 +433,15 @@ impl Window {
                 border as c_ulong,
                 pixel.pixel,
             );
-            
+
             let geometry = _get_geometry(display.display,window);
 
             let buffer = match buffer {
                 None => window,
                 Some(_) => PixMap::from_raw(&display,window,width,height,geometry.depth).pixmap
             };
+
+            unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
 
             Self {
                 window,
@@ -457,7 +473,16 @@ impl Window {
 
     pub fn set_window_background(&self, pixel: Pixel) {
         unsafe {
-            XSetWindowBackground(self.display, self.window, pixel.pixel);
+            let geometry = self.get_geometry();
+            let rect = Rectangle {
+                x: 0,
+                y: 0,
+                width: geometry.width,
+                height: geometry.height,
+                pixel,
+            };
+
+            self.fill_rectangle(rect);
         }
     }
 
@@ -466,6 +491,14 @@ impl Window {
             XSetForeground(self.display,self.gc,rect.pixel.pixel);
             XSetBackground(self.display,self.gc,rect.pixel.pixel);
             XFillRectangle(self.display,self.buffer,self.gc,rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
+        }
+    }
+
+    pub fn fill_arc(&self,arc:Arc) {
+        unsafe {
+            XSetForeground(self.display,self.gc,arc.pixel.pixel);
+            XSetBackground(self.display,self.gc,arc.pixel.pixel);
+            XFillArc(self.display,self.buffer,self.gc,arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
         }
     }
 
@@ -507,22 +540,24 @@ impl Window {
     }
 
     pub fn run<F>(&self, func: F)
-    where
-        F: Fn(WindowEvent, &mut ControlFlow),
+        where
+            F: Fn(WindowEvent, &mut ControlFlow),
     {
         unsafe {
-            let mut event = std::mem::MaybeUninit::uninit().assume_init();
-
             let mut control_flow = ControlFlow::Wait;
             loop {
-                XNextEvent(self.display, &mut event);
+                let event = unsafe {
+                    let mut event = MaybeUninit::uninit();
+                    XNextEvent(self.display, event.as_mut_ptr());
+                    event.assume_init()
+                };
 
                 match event.type_ {
                     Expose => {
                         func(WindowEvent::Expose, &mut control_flow);
                     }
                     _ => {
-                        break;
+
                     }
                 }
             }
@@ -550,7 +585,7 @@ impl Drop for Window {
     fn drop(&mut self) {
         unsafe {
             if self.buffer != 0 {
-                XDestroyWindow(self.display, self.buffer);
+                XDestroyWindow(self.display, self.window);
             }
         }
     }
@@ -558,24 +593,24 @@ impl Drop for Window {
 
 fn _get_geometry(display: *mut x11::xlib::Display,window:c_ulong) -> Geometry {
     unsafe {
-        let root = null_mut();
-        let x = null_mut();
-        let y = null_mut();
-        let width = null_mut();
-        let height = null_mut();
-        let border_width = null_mut();
-        let depth = null_mut();
+        let mut root = 0;
+        let mut x = 0;
+        let mut y = 0;
+        let mut width = 0;
+        let mut height = 0;
+        let mut border_width = 0;
+        let mut depth = 0;
 
         XGetGeometry(
             display,
             window,
-            root,
-            x,
-            y,
-            width,
-            height,
-            border_width,
-            depth,
+            &mut root,
+            &mut x,
+            &mut y,
+            &mut width,
+            &mut height,
+            &mut border_width,
+            &mut depth,
         );
 
         Geometry {

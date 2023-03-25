@@ -32,10 +32,21 @@ fn main() {
         pixel: color.get_pixel(),
     };
 
+    let arc = Arc {
+        x: 120,
+        y: 10,
+        width: 100,
+        height: 100,
+        angle1: 300*64,
+        angle2: 300*64,
+        pixel: color.get_pixel(),
+    };
+
     window.map(&display);
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {
             window.fill_rectangle(rect);
+            window.fill_arc(arc);
             window.copy_to_buffer();
         }
     })
