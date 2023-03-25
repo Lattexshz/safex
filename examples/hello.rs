@@ -4,7 +4,7 @@ fn main() {
     let display = Display::open(None);
     let screen = Screen::default(&display);
     let root = Window::root_window(&display, &screen);
-    
+
     let cmap = ColorMap::default(&display, &screen);
     let color = Color::from_rgb(&display, &cmap, 65535, 0, 65535);
 

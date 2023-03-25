@@ -366,7 +366,7 @@ impl Window {
 
             let buffer = match buffer {
                 None => window,
-                Some(_) => PixMap::from_raw(&display, window, width, height, depth as u32)
+                Some(_) => PixMap::from_raw(&display, window, width, height, depth as u32).pixmap
             };
 
             Self {
@@ -413,7 +413,7 @@ impl Window {
 
             let buffer = match buffer {
                 None => window,
-                Some(_) => PixMap::from_raw(&display,window,width,height,24)
+                Some(_) => PixMap::from_raw(&display,window,width,height,24).pixmap
             };
 
             Self {
@@ -515,7 +515,7 @@ impl Window {
         let geometry = _get_geometry(display.display,window);
         let buffer = match buffer {
             None => window,
-            Some(_) => PixMap::from_raw(&display,window,geometry.width,geometry.height,geometry.depth)
+            Some(_) => PixMap::from_raw(&display,window,geometry.width,geometry.height,geometry.depth).pixmap
         };
 
         Self {
