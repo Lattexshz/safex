@@ -167,6 +167,12 @@ impl Display {
         unsafe { XVendorRelease(self.display) as i32 }
     }
 
+    pub fn flush(&self) {
+        unsafe {
+            XFlush(self.display);
+        }
+    }
+
     pub fn from_raw(display: *mut x11::xlib::Display) -> Self {
         Self { display }
     }
@@ -398,6 +404,12 @@ impl Window {
                 border_width: cast!(border_width,u32),
                 depth: cast!(depth,u32),
             }
+        }
+    }
+
+    pub fn flush_gc(&self) {
+        unsafe {
+            XFlushGC(self.display,self.gc);
         }
     }
 
