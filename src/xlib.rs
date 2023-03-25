@@ -81,6 +81,28 @@ pub struct Arc {
     pub pixel: Pixel
 }
 
+pub struct Button {
+    parent: c_ulong,
+    handle: Window,
+
+    gc: GC
+}
+
+impl Button {
+    pub fn new(parent:&Window,display:&Display,screen:&Screen,x:i32,y:i32,width:u32,height:u32,border_width:u32,border_color:Pixel,color:Pixel) -> Self {
+        let handle = Window::create_simple(display, screen, None, Some(parent), x,y,width,height, border_width, border_color.pixel as u64, color);
+        unsafe {
+            XSelectInput(display.display, handle.window, (ButtonPressMask | ButtonReleaseMask) as c_long);
+        }
+
+        Self {
+            parent:parent.window,
+            handle,
+            gc: parent.gc
+        }
+    }
+}
+
 pub enum ControlFlow {
     Wait,
     Exit,
@@ -351,7 +373,7 @@ impl Window {
         display: &Display,
         screen: &Screen,
         buffer: Option<()>,
-        parent: Option<Window>,
+        parent: Option<&Window>,
         x: i32,
         y: i32,
         width: u32,
@@ -406,7 +428,7 @@ impl Window {
         display: &Display,
         screen: &Screen,
         buffer: Option<()>,
-        parent: Option<Window>,
+        parent: Option<&Window>,
         x: i32,
         y: i32,
         width: u32,

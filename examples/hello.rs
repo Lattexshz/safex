@@ -9,12 +9,13 @@ fn main() {
     let color = Color::from_rgb(&display, &cmap, 65535, 0, 0);
 
     let white = Color::from_rgb(&display, &cmap, 65535, 65535, 65535).get_pixel();
+    let black = Color::from_rgb(&display, &cmap, 0, 0, 65535).get_pixel();
 
     let window = Window::create_simple(
         &display,
         &screen,
         Some(()),
-        Some(root),
+        Some(&root),
         0,
         0,
         500,
@@ -25,6 +26,7 @@ fn main() {
     );
 
     window.set_window_title("Hello World");
+    let button = Button::new(&window,&display,&screen,10,240,200,100,1,blue,white);
 
     let rect = Rectangle {
         x: 10,
