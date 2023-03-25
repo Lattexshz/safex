@@ -233,6 +233,19 @@ impl PixMap {
         };
         Self { pixmap }
     }
+
+    pub fn from_raw(display: &Display, window: c_ulong, width: u32, height: u32, depth: u32) -> Self {
+        let pixmap = unsafe {
+            XCreatePixmap(
+                display.display,
+                window,
+                width as c_uint,
+                height as c_uint,
+                depth as c_uint,
+            )
+        };
+        Self { pixmap }
+    }
 }
 
 pub struct Screen {
@@ -315,7 +328,7 @@ impl Window {
     pub fn create(
         display: &Display,
         screen: &Screen,
-        buffer: Option<PixMap>,
+        buffer: Option<()>,
         parent: Option<Window>,
         x: i32,
         y: i32,
@@ -353,7 +366,7 @@ impl Window {
 
             let buffer = match buffer {
                 None => window,
-                Some(b) => b.pixmap
+                Some(_) => PixMap::from_raw(&display, window, width, height, depth as u32)
             };
 
             Self {
@@ -368,7 +381,7 @@ impl Window {
     pub fn create_simple(
         display: &Display,
         screen: &Screen,
-        buffer: Option<PixMap>,
+        buffer: Option<()>,
         parent: Option<Window>,
         x: i32,
         y: i32,
@@ -400,7 +413,7 @@ impl Window {
 
             let buffer = match buffer {
                 None => window,
-                Some(b) => b.pixmap
+                Some(_) => PixMap::from_raw(&display,window,width,height,24)
             };
 
             Self {
@@ -439,34 +452,7 @@ impl Window {
 
     pub fn get_geometry(&self) -> Geometry {
         unsafe {
-            let root = null_mut();
-            let x = null_mut();
-            let y = null_mut();
-            let width = null_mut();
-            let height = null_mut();
-            let border_width = null_mut();
-            let depth = null_mut();
-
-            XGetGeometry(
-                self.display,
-                self.buffer,
-                root,
-                x,
-                y,
-                width,
-                height,
-                border_width,
-                depth,
-            );
-
-            Geometry {
-                x: cast!(x, i32),
-                y: cast!(y, i32),
-                width: cast!(width, u32),
-                height: cast!(height, u32),
-                border_width: cast!(border_width, u32),
-                depth: cast!(depth, u32),
-            }
+            _get_geometry(self.display,self.window)
         }
     }
 
@@ -524,11 +510,12 @@ impl Window {
         }
     }
 
-    pub unsafe fn from_raw(display: &Display, screen: &Screen, window: c_ulong,buffer:Option<PixMap>) -> Self {
+    pub unsafe fn from_raw(display: &Display, screen: &Screen, window: c_ulong,buffer:Option<()>) -> Self {
         let gc = XDefaultGC(display.display, screen.screen);
+        let geometry = _get_geometry(display.display,window);
         let buffer = match buffer {
             None => window,
-            Some(p) => p.pixmap
+            Some(_) => PixMap::from_raw(&display,window,geometry.width,geometry.height,geometry.depth)
         };
 
         Self {
@@ -546,6 +533,39 @@ impl Drop for Window {
             if self.buffer != 0 {
                 XDestroyWindow(self.display, self.buffer);
             }
+        }
+    }
+}
+
+fn _get_geometry(display: *mut x11::xlib::Display,window:c_ulong) -> Geometry {
+    unsafe {
+        let root = null_mut();
+        let x = null_mut();
+        let y = null_mut();
+        let width = null_mut();
+        let height = null_mut();
+        let border_width = null_mut();
+        let depth = null_mut();
+
+        XGetGeometry(
+            display,
+            window,
+            root,
+            x,
+            y,
+            width,
+            height,
+            border_width,
+            depth,
+        );
+
+        Geometry {
+            x: cast!(x, i32),
+            y: cast!(y, i32),
+            width: cast!(width, u32),
+            height: cast!(height, u32),
+            border_width: cast!(border_width, u32),
+            depth: cast!(depth, u32),
         }
     }
 }
