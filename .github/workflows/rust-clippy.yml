@@ -39,7 +39,9 @@ jobs:
           override: true
           
       - name: Install X11 Lib
-        run: sudo apt install libx11-dev
+        run: | 
+          sudo apt install libx11-dev
+          sudo apt install pkg-config
 
       - name: Install required cargo
         run: cargo install clippy-sarif sarif-fmt
