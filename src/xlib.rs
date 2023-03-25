@@ -495,11 +495,27 @@ impl Window {
         }
     }
 
+    pub fn draw_rectangle(&self,rect:Rectangle) {
+        unsafe {
+            XSetForeground(self.display,self.gc,rect.pixel.pixel);
+            XSetBackground(self.display,self.gc,rect.pixel.pixel);
+            XDrawRectangle(self.display,self.buffer,self.gc,rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
+        }
+    }
+
     pub fn fill_arc(&self,arc:Arc) {
         unsafe {
             XSetForeground(self.display,self.gc,arc.pixel.pixel);
             XSetBackground(self.display,self.gc,arc.pixel.pixel);
             XFillArc(self.display,self.buffer,self.gc,arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
+        }
+    }
+
+    pub fn draw_arc(&self,arc:Arc) {
+        unsafe {
+            XSetForeground(self.display,self.gc,arc.pixel.pixel);
+            XSetBackground(self.display,self.gc,arc.pixel.pixel);
+            XDrawArc(self.display,self.buffer,self.gc,arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
         }
     }
 
