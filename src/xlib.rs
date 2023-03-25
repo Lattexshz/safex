@@ -419,10 +419,12 @@ impl Window {
                 border as c_ulong,
                 pixel.pixel,
             );
+            
+            let geometry = _get_geometry(display.display,window);
 
             let buffer = match buffer {
                 None => window,
-                Some(_) => PixMap::from_raw(&display,window,width,height,24).pixmap
+                Some(_) => PixMap::from_raw(&display,window,width,height,geometry.depth).pixmap
             };
 
             Self {
