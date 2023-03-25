@@ -519,6 +519,15 @@ impl Window {
         }
     }
 
+    pub fn draw_string(&self,string:&str,x:i32,y:i32,color:Pixel) {
+        unsafe {
+            XSetForeground(self.display,self.gc,color.pixel);
+            XSetBackground(self.display,self.gc,color.pixel);
+            let len = string.len();
+            XDrawString(self.display,self.buffer,self.gc,x as c_int,y as c_int,CString::new(string).unwrap().as_ptr(),len as c_int);
+        }
+    }
+
     pub fn get_geometry(&self) -> Geometry {
         unsafe {
             _get_geometry(self.display,self.window)
