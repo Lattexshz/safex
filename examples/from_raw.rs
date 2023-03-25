@@ -21,17 +21,25 @@ fn main() {
         RawWindowHandle::Orbital(_) => {}
         RawWindowHandle::Xlib(handle) => {
             let display = Display::open(None);
-            let screen = Screen::default(&Display);
-            let window = unsafe { Window::from_raw(&display,&screen,handle.window) };
-            window.set_window_title("Hello World from SafeX");
-            window.map(&display);
-            window.run(|event,control_flow| {
+            let screen = Screen::default(&display);
+            let safex_window = unsafe { Window::from_raw(&display,&screen,handle.window) };
+            safex_window.set_window_title("Hello World from SafeX");
+            let cmap = ColorMap::default(&display,&screen);
+            let color = Color::from_rgb(&display,&cmap,65535,0,65535);
+            event_loop.run(move |event, _, control_flow| {
+                control_flow.set_wait();
+
                 match event {
-                    WindowEvent::Expose => {
-                        println!("Expose!");
+                    Event::WindowEvent {
+                        event: WindowEvent::CloseRequested,
+                        window_id,
+                    } if window_id == window.id() => control_flow.set_exit(),
+                    Event::MainEventsCleared => {
+                        safex_window.set_background_pixel(color.get_pixel());
                     }
+                    _ => (),
                 }
-            })
+            });
         }
         RawWindowHandle::Xcb(_) => {}
         RawWindowHandle::Wayland(_) => {}
