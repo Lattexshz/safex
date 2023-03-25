@@ -1,5 +1,5 @@
-use safex::xlib::*;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+use safex::xlib::*;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::EventLoop,
@@ -22,10 +22,10 @@ fn main() {
         RawWindowHandle::Xlib(handle) => {
             let display = Display::open(None);
             let screen = Screen::default(&display);
-            let safex_window = unsafe { Window::from_raw(&display,&screen,handle.window) };
+            let safex_window = unsafe { Window::from_raw(&display, &screen, handle.window) };
             safex_window.set_window_title("Hello World from SafeX");
-            let cmap = ColorMap::default(&display,&screen);
-            let color = Color::from_rgb(&display,&cmap,65535,0,65535);
+            let cmap = ColorMap::default(&display, &screen);
+            let color = Color::from_rgb(&display, &cmap, 65535, 0, 65535);
             event_loop.run(move |event, _, control_flow| {
                 control_flow.set_wait();
 
@@ -35,6 +35,7 @@ fn main() {
                         window_id,
                     } if window_id == window.id() => control_flow.set_exit(),
                     Event::MainEventsCleared => {
+                        window.request_redraw();
                         safex_window.set_window_background(color.get_pixel());
                     }
                     _ => (),

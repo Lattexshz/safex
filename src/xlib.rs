@@ -3,98 +3,97 @@ use std::ffi::{c_char, c_int, c_uint, c_ulong, c_ushort, CStr, CString};
 use std::ptr::{addr_of, null_mut};
 use x11::xlib::*;
 
-type _Window = c_ulong;
+type Buffer = c_ulong;
 
 pub type EventMask = c_ulong;
 
 // Re-Exports
 macro_rules! export {
     ($cons:ident,$type_:ident) => {
-        pub const $cons:$type_ = x11::xlib::$cons as $type_;
-    }
+        pub const $cons: $type_ = x11::xlib::$cons as $type_;
+    };
 }
 
 macro_rules! cast {
     ($val:ident,$type_:ty) => {
         $val as $type_
-    }
+    };
 }
 
 // EventMasks
-export!(NoEventMask,EventMask);
-export!(KeyPressMask,EventMask);
-export!(KeyReleaseMask,EventMask);
-export!(ButtonPressMask,EventMask);
-export!(ButtonReleaseMask,EventMask);
-export!(EnterWindowMask,EventMask);
-export!(LeaveWindowMask,EventMask);
-export!(PointerMotionMask,EventMask);
-export!(PointerMotionHintMask,EventMask);
-export!(Button1MotionMask,EventMask);
-export!(Button2MotionMask,EventMask);
-export!(Button3MotionMask,EventMask);
-export!(Button4MotionMask,EventMask);
-export!(Button5MotionMask,EventMask);
-export!(KeymapStateMask,EventMask);
-export!(ExposureMask,EventMask);
-export!(VisibilityChangeMask,EventMask);
-export!(StructureNotifyMask,EventMask);
-export!(ResizeRedirectMask,EventMask);
-export!(SubstructureNotifyMask,EventMask);
-export!(SubstructureRedirectMask,EventMask);
-export!(FocusChangeMask,EventMask);
-export!(PropertyChangeMask,EventMask);
-export!(ColormapChangeMask,EventMask);
-export!(OwnerGrabButtonMask,EventMask);
+export!(NoEventMask, EventMask);
+export!(KeyPressMask, EventMask);
+export!(KeyReleaseMask, EventMask);
+export!(ButtonPressMask, EventMask);
+export!(ButtonReleaseMask, EventMask);
+export!(EnterWindowMask, EventMask);
+export!(LeaveWindowMask, EventMask);
+export!(PointerMotionMask, EventMask);
+export!(PointerMotionHintMask, EventMask);
+export!(Button1MotionMask, EventMask);
+export!(Button2MotionMask, EventMask);
+export!(Button3MotionMask, EventMask);
+export!(Button4MotionMask, EventMask);
+export!(Button5MotionMask, EventMask);
+export!(KeymapStateMask, EventMask);
+export!(ExposureMask, EventMask);
+export!(VisibilityChangeMask, EventMask);
+export!(StructureNotifyMask, EventMask);
+export!(ResizeRedirectMask, EventMask);
+export!(SubstructureNotifyMask, EventMask);
+export!(SubstructureRedirectMask, EventMask);
+export!(FocusChangeMask, EventMask);
+export!(PropertyChangeMask, EventMask);
+export!(ColormapChangeMask, EventMask);
+export!(OwnerGrabButtonMask, EventMask);
 
 pub type WindowClass = c_uint;
 
-export!(InputOutput,WindowClass);
-export!(InputOnly,WindowClass);
+export!(InputOutput, WindowClass);
+export!(InputOnly, WindowClass);
 
 pub type WindowAttribute = c_ulong;
 
-export!(CWBackPixmap,WindowAttribute);
-export!(CWBackPixel,WindowAttribute);
-export!(CWBorderPixmap,WindowAttribute);
-export!(CWBorderPixel,WindowAttribute);
-export!(CWBitGravity,WindowAttribute);
-export!(CWWinGravity,WindowAttribute);
-export!(CWBackingStore,WindowAttribute);
-export!(CWBackingPlanes,WindowAttribute);
-export!(CWOverrideRedirect,WindowAttribute);
-export!(CWSaveUnder,WindowAttribute);
-export!(CWEventMask,WindowAttribute);
-export!(CWDontPropagate,WindowAttribute);
-export!(CWColormap,WindowAttribute);
-export!(CWCursor,WindowAttribute);
+export!(CWBackPixmap, WindowAttribute);
+export!(CWBackPixel, WindowAttribute);
+export!(CWBorderPixmap, WindowAttribute);
+export!(CWBorderPixel, WindowAttribute);
+export!(CWBitGravity, WindowAttribute);
+export!(CWWinGravity, WindowAttribute);
+export!(CWBackingStore, WindowAttribute);
+export!(CWBackingPlanes, WindowAttribute);
+export!(CWOverrideRedirect, WindowAttribute);
+export!(CWSaveUnder, WindowAttribute);
+export!(CWEventMask, WindowAttribute);
+export!(CWDontPropagate, WindowAttribute);
+export!(CWColormap, WindowAttribute);
+export!(CWCursor, WindowAttribute);
 
 pub enum ControlFlow {
     Wait,
     Exit,
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color<'a> {
-    pixel:Pixel,
-    red:u16,
-    green:u16,
-    blue:u16,
-    flags:&'a str,
-    pad:&'a str,
+    pixel: Pixel,
+    red: u16,
+    green: u16,
+    blue: u16,
+    flags: &'a str,
+    pad: &'a str,
 }
 
 impl<'a> Color<'a> {
-    pub fn from_rgb(display:&Display,cmap:&ColorMap,r:u16,g:u16,b:u16) -> Self {
-        let mut color:XColor =
-            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+    pub fn from_rgb(display: &Display, cmap: &ColorMap, r: u16, g: u16, b: u16) -> Self {
+        let mut color: XColor = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
 
         color.red = r as c_ushort;
         color.green = g as c_ushort;
         color.blue = b as c_ushort;
 
         unsafe {
-            XAllocColor(display.display,cmap.cmap,&mut color);
+            XAllocColor(display.display, cmap.cmap, &mut color);
         }
 
         Self {
@@ -113,15 +112,13 @@ impl<'a> Color<'a> {
 }
 
 pub struct ColorMap {
-    cmap: c_ulong
+    cmap: c_ulong,
 }
 
 impl ColorMap {
-    pub fn default(display:&Display,screen:&Screen) -> Self {
-        let cmap = unsafe { XDefaultColormap(display.display,screen.screen) };
-        Self {
-            cmap
-        }
+    pub fn default(display: &Display, screen: &Screen) -> Self {
+        let cmap = unsafe { XDefaultColormap(display.display, screen.screen) };
+        Self { cmap }
     }
 }
 
@@ -188,40 +185,53 @@ impl Drop for Display {
     }
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Geometry {
     pub x: i32,
     pub y: i32,
     pub width: u32,
     pub height: u32,
     pub border_width: u32,
-    pub depth:u32
+    pub depth: u32,
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Pixel {
-    pixel:c_ulong
+    pixel: c_ulong,
 }
 
 impl Pixel {
-    pub fn black(display:&Display,screen:&Screen) -> Self {
-        let pixel = unsafe { XBlackPixel(display.display,screen.screen) };
+    pub fn black(display: &Display, screen: &Screen) -> Self {
+        let pixel = unsafe { XBlackPixel(display.display, screen.screen) };
 
-        Self {
-            pixel
-        }
+        Self { pixel }
     }
-    pub fn white(display:&Display,screen:&Screen) -> Self {
-        let pixel = unsafe { XWhitePixel(display.display,screen.screen) };
+    pub fn white(display: &Display, screen: &Screen) -> Self {
+        let pixel = unsafe { XWhitePixel(display.display, screen.screen) };
 
-        Self {
-            pixel
-        }
+        Self { pixel }
     }
-    pub fn from_rgb(r:u8,g:u8,b:u8) -> Self {
-        Self {
-            pixel: 0
-        }
+    pub fn from_rgb(r: u8, g: u8, b: u8) -> Self {
+        Self { pixel: 0 }
+    }
+}
+
+pub struct PixMap {
+    pixmap: c_ulong,
+}
+
+impl PixMap {
+    pub fn create(display: &Display, window: &Window, width: u32, height: u32, depth: u32) -> Self {
+        let pixmap = unsafe {
+            XCreatePixmap(
+                display.display,
+                window.buffer,
+                width as c_uint,
+                height as c_uint,
+                depth as c_uint,
+            )
+        };
+        Self { pixmap }
     }
 }
 
@@ -268,12 +278,12 @@ impl WindowAttributesBuilder {
         self
     }
 
-    pub fn background_pixel(mut self,pixel: Pixel) -> Self {
+    pub fn background_pixel(mut self, pixel: Pixel) -> Self {
         self.attributes.background_pixel = pixel.pixel;
         self
     }
 
-    pub fn backing_pixel(mut self,pixel: Pixel) -> Self {
+    pub fn backing_pixel(mut self, pixel: Pixel) -> Self {
         self.attributes.backing_pixel = pixel.pixel;
         self
     }
@@ -284,21 +294,28 @@ pub enum WindowEvent {
 }
 
 pub struct Window {
-    window: _Window,
+    window: Buffer,
+    buffer: Buffer,
     display: *mut x11::xlib::Display,
-    gc: GC
+    gc: GC,
 }
 
 impl Window {
     pub fn root_window(display: &Display, screen: &Screen) -> Self {
         let window = unsafe { XRootWindow(display.display, screen.screen) };
-        let gc = unsafe { XDefaultGC(display.display,screen.screen) };
-        Self { window,display:display.display, gc }
+        let gc = unsafe { XDefaultGC(display.display, screen.screen) };
+        Self {
+            window,
+            buffer: window,
+            display: display.display,
+            gc,
+        }
     }
 
     pub fn create(
         display: &Display,
         screen: &Screen,
+        buffer: Option<PixMap>,
         parent: Option<Window>,
         x: i32,
         y: i32,
@@ -314,10 +331,10 @@ impl Window {
         unsafe {
             let parent = match parent {
                 None => 0,
-                Some(p) => p.window,
+                Some(p) => p.buffer,
             };
 
-            let gc = XDefaultGC(display.display,screen.screen);
+            let gc = XDefaultGC(display.display, screen.screen);
 
             let window = XCreateWindow(
                 display.display,
@@ -334,59 +351,88 @@ impl Window {
                 &mut attributes.attributes,
             );
 
-            Self { window, display: display.display, gc }
-        }
-    }
-
-    pub fn create_simple(display: &Display,
-                         screen: &Screen,
-                         parent: Option<Window>,
-                         x: i32,
-                         y: i32,
-                         width: u32,
-                         height: u32,
-                         border_width: u32,
-                         border:u64,
-    pixel: Pixel) -> Self {
-        unsafe {
-            let parent = match parent {
-                None => 0,
-                Some(p) => p.window,
+            let buffer = match buffer {
+                None => window,
+                Some(b) => b
             };
 
-            let gc = XDefaultGC(display.display,screen.screen);
-
-            let window = XCreateSimpleWindow(display.display,parent,x as c_int,y as c_int,width as c_uint,height as c_uint,border_width as c_uint,border as c_ulong,pixel.pixel);
             Self {
                 window,
-                display:display.display,
-                gc
+                buffer,
+                display: display.display,
+                gc,
             }
         }
     }
 
-    pub fn set_window_title(&self,title: &str) {
+    pub fn create_simple(
+        display: &Display,
+        screen: &Screen,
+        buffer: Option<PixMap>,
+        parent: Option<Window>,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        border_width: u32,
+        border: u64,
+        pixel: Pixel,
+    ) -> Self {
+        unsafe {
+            let parent = match parent {
+                None => 0,
+                Some(p) => p.buffer,
+            };
+
+            let gc = XDefaultGC(display.display, screen.screen);
+
+            let window = XCreateSimpleWindow(
+                display.display,
+                parent,
+                x as c_int,
+                y as c_int,
+                width as c_uint,
+                height as c_uint,
+                border_width as c_uint,
+                border as c_ulong,
+                pixel.pixel,
+            );
+
+            let buffer = match buffer {
+                None => window,
+                Some(b) => b
+            };
+
+            Self {
+                buffer,
+                display: display.display,
+                gc,
+            }
+        }
+    }
+
+    pub fn set_window_title(&self, title: &str) {
         unsafe {
             let title_str = CString::new(title).unwrap();
-            XStoreName(self.display,self.window,title_str.as_ptr() as *mut c_char);
+            XStoreName(self.display, self.buffer, title_str.as_ptr() as *mut c_char);
         }
     }
 
-    pub fn set_background_pixel(&self,pixel:Pixel) {
+    pub fn set_background_pixel(&self, pixel: Pixel) {
         unsafe {
-            XSetBackground(self.display,self.gc,pixel.pixel);
+            XSetBackground(self.display, self.gc, pixel.pixel);
         }
     }
 
-    pub fn set_foreground_pixel(&self,pixel: Pixel) {
+    pub fn set_foreground_pixel(&self, pixel: Pixel) {
         unsafe {
-            XSetForeground(self.display,self.gc,pixel.pixel);
+            XSetForeground(self.display, self.gc, pixel.pixel);
         }
     }
 
-    pub fn set_window_background(&self,pixel:Pixel) {
+    pub fn set_window_background(&self, pixel: Pixel) {
         unsafe {
-            XSetWindowBackground(self.display,self.window,pixel.pixel);
+            XSetWindowBackground(self.display, self.buffer, pixel.pixel);
         }
     }
 
@@ -400,28 +446,57 @@ impl Window {
             let border_width = null_mut();
             let depth = null_mut();
 
-            XGetGeometry(self.display, self.window, root, x,y,width,height,border_width,depth);
+            XGetGeometry(
+                self.display,
+                self.buffer,
+                root,
+                x,
+                y,
+                width,
+                height,
+                border_width,
+                depth,
+            );
 
             Geometry {
-                x: cast!(x,i32),
-                y: cast!(y,i32),
-                width: cast!(width,u32),
-                height: cast!(height,u32),
-                border_width: cast!(border_width,u32),
-                depth: cast!(depth,u32),
+                x: cast!(x, i32),
+                y: cast!(y, i32),
+                width: cast!(width, u32),
+                height: cast!(height, u32),
+                border_width: cast!(border_width, u32),
+                depth: cast!(depth, u32),
             }
+        }
+    }
+
+    pub fn copy_to_buffer(&self) {
+        unsafe {
+            let geometry = self.get_geometry();
+
+            XCopyArea(
+                self.display,
+                self.buffer,
+                self.window,
+                self.gc,
+                0,
+                0,
+                geometry.width as c_uint,
+                geometry.height as c_uint,
+                0,
+                0,
+            );
         }
     }
 
     pub fn flush_gc(&self) {
         unsafe {
-            XFlushGC(self.display,self.gc);
+            XFlushGC(self.display, self.gc);
         }
     }
 
     pub fn map(&self, display: &Display) {
         unsafe {
-            XMapWindow(display.display, self.window);
+            XMapWindow(display.display, self.buffer);
         }
     }
 
@@ -448,11 +523,11 @@ impl Window {
         }
     }
 
-    pub unsafe fn from_raw(display:&Display,screen:&Screen,window:c_ulong) -> Self {
-        let gc = XDefaultGC(display.display,screen.screen);
+    pub unsafe fn from_raw(display: &Display, screen: &Screen, window: c_ulong) -> Self {
+        let gc = XDefaultGC(display.display, screen.screen);
 
         Self {
-            window,
+            buffer: window,
             display: display.display,
             gc,
         }
@@ -462,8 +537,8 @@ impl Window {
 impl Drop for Window {
     fn drop(&mut self) {
         unsafe {
-            if self.window != 0 {
-                XDestroyWindow(self.display,self.window);
+            if self.buffer != 0 {
+                XDestroyWindow(self.display, self.buffer);
             }
         }
     }
