@@ -70,6 +70,7 @@ export!(CWDontPropagate, WindowAttribute);
 export!(CWColormap, WindowAttribute);
 export!(CWCursor, WindowAttribute);
 
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Arc {
     pub x:u32,
     pub y:u32,
