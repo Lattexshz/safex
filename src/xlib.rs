@@ -353,7 +353,7 @@ impl Window {
 
             let buffer = match buffer {
                 None => window,
-                Some(b) => b
+                Some(b) => b.pixmap
             };
 
             Self {
@@ -400,10 +400,11 @@ impl Window {
 
             let buffer = match buffer {
                 None => window,
-                Some(b) => b
+                Some(b) => b.pixmap
             };
 
             Self {
+                window,
                 buffer,
                 display: display.display,
                 gc,
@@ -523,11 +524,16 @@ impl Window {
         }
     }
 
-    pub unsafe fn from_raw(display: &Display, screen: &Screen, window: c_ulong) -> Self {
+    pub unsafe fn from_raw(display: &Display, screen: &Screen, window: c_ulong,buffer:Option<PixMap>) -> Self {
         let gc = XDefaultGC(display.display, screen.screen);
+        let buffer = match buffer {
+            None => window,
+            Some(p) => p.pixmap
+        };
 
         Self {
-            buffer: window,
+            window,
+            buffer,
             display: display.display,
             gc,
         }
