@@ -35,9 +35,7 @@ fn main() {
                         window_id,
                     } if window_id == window.id() => control_flow.set_exit(),
                     Event::MainEventsCleared => {
-                        safex_window.set_background_pixel(color.get_pixel());
-                        safex_window.flush_gc();
-                        display.flush();
+                        safex_window.set_window_background(color.get_pixel());
                     }
                     _ => (),
                 }

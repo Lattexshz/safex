@@ -384,6 +384,12 @@ impl Window {
         }
     }
 
+    pub fn set_window_background(&self,pixel:Pixel) {
+        unsafe {
+            XSetWindowBackground(self.display,self.window,pixel.pixel);
+        }
+    }
+
     pub fn get_geometry(&self) -> Geometry {
         unsafe {
             let root = null_mut();
