@@ -248,6 +248,15 @@ impl PixMap {
     }
 }
 
+#[derive(Clone,Copy,Debug,PartialEq)]
+pub struct Rectangle {
+    pub x:u32,
+    pub y:u32,
+    pub width:u32,
+    pub height:u32,
+    pub pixel: Pixel
+}
+
 pub struct Screen {
     screen: c_int,
 }
@@ -447,6 +456,14 @@ impl Window {
     pub fn set_window_background(&self, pixel: Pixel) {
         unsafe {
             XSetWindowBackground(self.display, self.window, pixel.pixel);
+        }
+    }
+
+    pub fn fill_rectangle(&self,rect:Rectangle) {
+        unsafe {
+            XSetForeground(self.display,self.gc,rect.pixel.pixel);
+            XSetBackground(self.display,self.gc,rect.pixel.pixel);
+            XFillRectangle(self.display,self.buffer,self.gc,rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
         }
     }
 
