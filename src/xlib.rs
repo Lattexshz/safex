@@ -428,7 +428,7 @@ impl Window {
     pub fn set_window_title(&self, title: &str) {
         unsafe {
             let title_str = CString::new(title).unwrap();
-            XStoreName(self.display, self.buffer, title_str.as_ptr() as *mut c_char);
+            XStoreName(self.display, self.window, title_str.as_ptr() as *mut c_char);
         }
     }
 
@@ -446,7 +446,7 @@ impl Window {
 
     pub fn set_window_background(&self, pixel: Pixel) {
         unsafe {
-            XSetWindowBackground(self.display, self.buffer, pixel.pixel);
+            XSetWindowBackground(self.display, self.window, pixel.pixel);
         }
     }
 
@@ -483,7 +483,7 @@ impl Window {
 
     pub fn map(&self, display: &Display) {
         unsafe {
-            XMapWindow(display.display, self.buffer);
+            XMapWindow(display.display, self.window);
         }
     }
 
