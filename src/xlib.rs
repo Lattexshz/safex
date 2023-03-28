@@ -328,6 +328,7 @@ pub struct Rectangle {
     pub pixel: Pixel,
 }
 
+#[derive(Clone,Debug,PartialEq)]
 pub struct Screen {
     screen: c_int,
 }
@@ -349,6 +350,7 @@ impl AsRaw<c_int> for Screen {
     }
 }
 
+#[derive(Clone,Debug,PartialEq)]
 pub struct Visual {
     visual: *mut x11::xlib::Visual,
 }
@@ -370,7 +372,7 @@ impl AsRaw<*mut x11::xlib::Visual> for Visual {
     }
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone,Debug,PartialEq)]
 pub struct VisualInfo {
     pub visual: Visual,
     pub visualid: VisualID,

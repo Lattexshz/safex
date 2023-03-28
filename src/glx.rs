@@ -2,7 +2,6 @@ use crate::xlib::{AsRaw, CWColormap, CWEventMask, ColorMap, ControlFlow, Display
 use std::ffi::{c_int, c_uchar, c_void};
 use std::mem::MaybeUninit;
 use std::ptr::addr_of_mut;
-use gl33::GLenum;
 use x11::glx::*;
 use x11::xlib::*;
 
@@ -71,8 +70,8 @@ pub struct GLXContext {
 }
 
 impl GLXContext {
-    pub fn create(display: &Display, vi: VisualInfo, glc: Option<GLXContext>, flag: GLenum) -> Self {
-        let vi = XVisualInfo {
+    pub fn create(display: &Display, vi: &VisualInfo, glc: Option<GLXContext>, flag: i32) -> Self {
+        let mut vi = XVisualInfo {
             visual: vi.visual.as_raw(),
             visualid: vi.visualid as VisualID,
             screen: vi.screen.as_raw(),
@@ -88,8 +87,8 @@ impl GLXContext {
         let glc = unsafe { glXCreateContext(display.as_raw(), addr_of_mut!(vi),std::ptr::null_mut(), flag as c_int) };
         Self { glc }
     }
-    
-    pub fn get_proc_address(&self,display: &Display,screen: &Screen) -> Option<fn()> {
+
+    pub fn get_proc_address(&self,display: &Display,screen: &Screen) -> Option<unsafe extern "C" fn()> {
         unsafe {
             let string = glXGetClientString(display.as_raw(),screen.as_raw());
             glXGetProcAddress(string as *const c_uchar)
@@ -109,9 +108,9 @@ pub struct GLXWindow {
 }
 
 impl GLXWindow {
-    pub fn new(display: &Display, screen: &Screen, vi: VisualInfo) -> Result<Self, ()> {
+    pub fn new(display: &Display, screen: &Screen, vi: &VisualInfo) -> Result<Self, ()> {
         let root = Window::root_window(display, screen);
-        let visual = unsafe { Visual::from_raw((*vi).visual) };
+        let visual = unsafe { Visual::from_raw(vi.visual.as_raw()) };
 
         let cmap = ColorMap::create(display, &root, &visual);
 
@@ -129,7 +128,7 @@ impl GLXWindow {
             100,
             100,
             1,
-            unsafe { (*vi).depth },
+            vi.depth,
             InputOutput,
             &visual,
             CWColormap | CWEventMask,
@@ -149,8 +148,8 @@ impl GLXWindow {
     }
 
     pub fn run<F>(&self, func: F)
-    where
-        F: Fn(WindowEvent, &mut ControlFlow),
+        where
+            F: Fn(WindowEvent, &mut ControlFlow),
     {
         unsafe {
             let mut control_flow = ControlFlow::Wait;
@@ -172,13 +171,12 @@ impl GLXWindow {
     }
 }
 
-pub fn glx_choose_visual(attrs: &mut [GLXAttribute]) -> Result<VisualInfo,()> {
+pub fn glx_choose_visual(display: &Display,attrs: &mut [GLXAttribute]) -> Result<VisualInfo,()> {
     let mut vi = unsafe {
         let mut vi = glXChooseVisual(display.as_raw(), 0, attrs.as_mut_ptr());
         if vi == std::ptr::null_mut() {
             return Err(());
         }
-
         vi
     };
 

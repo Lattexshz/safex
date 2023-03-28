@@ -5,18 +5,18 @@ use safex::xlib::*;
 fn main() {
     let display = Display::open(None);
     let screen = Screen::default(&display);
-    let vi = glx_choose_visual(&mut [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_NONE]).unwrap();
+    let vi = glx_choose_visual(&display,&mut [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_NONE]).unwrap();
     let window = GLXWindow::new(
         &display,
         &screen,
-        vi,
+        &vi,
     )
     .unwrap();
 
-    let glc = GLXContext::create(&display,vi,None,gl33::GL_TRUE);
+    let glc = GLXContext::create(&display,&vi,None,gl33::GL_TRUE);
     glx_make_current(&display,&window,glc);
 
-    gl::load_with(|| {
+    gl::load_with(|string| {
         glc.get_proc_address(&display,&screen).unwrap() as *mut c_void
     });
 
