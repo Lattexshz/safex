@@ -223,6 +223,19 @@ pub struct Geometry {
     pub depth: u32,
 }
 
+#[derive(Clone,Debug,PartialEq)]
+pub struct GC(x11::xlib::GC);
+
+impl GC {
+
+}
+
+impl AsRaw<x11::xlib::GC> for GC {
+    fn as_raw(&self) -> x11::xlib::GC {
+        self.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Pixel {
     pixel: c_ulong,
@@ -241,6 +254,12 @@ impl Pixel {
     }
     pub fn from_rgb(display: &Display,cmap: &ColorMap,r: u16, g: u16, b: u16) -> Self {
         Color::from_rgb(display,cmap,r,g,b).pixel
+    }
+}
+
+impl AsRaw<c_ulong> for Pixel {
+    fn as_raw(&self) -> c_ulong {
+        self.pixel
     }
 }
 
@@ -336,7 +355,7 @@ pub struct WindowAttributesBuilder {
 impl WindowAttributesBuilder {
     pub fn new() -> Self {
         let attributes: XSetWindowAttributes =
-            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+            unsafe { MaybeUninit::uninit().assume_init() };
 
         Self { attributes }
     }
@@ -347,12 +366,22 @@ impl WindowAttributesBuilder {
     }
 
     pub fn background_pixel(mut self, pixel: Pixel) -> Self {
-        self.attributes.background_pixel = pixel.pixel;
+        self.attributes.background_pixel = pixel.as_raw();
         self
     }
 
     pub fn backing_pixel(mut self, pixel: Pixel) -> Self {
-        self.attributes.backing_pixel = pixel.pixel;
+        self.attributes.backing_pixel = pixel.as_raw();
+        self
+    }
+
+    pub fn colormap(mut self, cmap: ColorMap) -> Self {
+        self.attributes.colormap = cmap.as_raw();
+        self
+    }
+
+    pub fn event_mask(mut self,mask: EventMask) -> Self {
+        self.attributes.event_mask = mask as c_long;
         self
     }
 }
@@ -377,7 +406,7 @@ pub struct Window {
 impl Window {
     pub fn root_window(display: &Display, screen: &Screen) -> Self {
         let window = unsafe { XRootWindow(display.display, screen.screen) };
-        let gc = unsafe { XDefaultGC(display.display, screen.screen) };
+        let gc = GC(unsafe { XDefaultGC(display.display, screen.screen) });
         unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
         Self {
             window,
@@ -409,7 +438,7 @@ impl Window {
                 Some(p) => p.buffer,
             };
 
-            let gc = XDefaultGC(display.display, screen.screen);
+            let gc = GC(XDefaultGC(display.display, screen.screen));
 
             let window = XCreateWindow(
                 display.display,
@@ -437,7 +466,7 @@ impl Window {
                 window,
                 buffer,
                 display: display.display,
-                gc,
+                gc
             }
         }
     }
@@ -461,7 +490,7 @@ impl Window {
                 Some(p) => p.buffer,
             };
 
-            let gc = XDefaultGC(display.display, screen.screen);
+            let gc = GC(XDefaultGC(display.display, screen.screen));
 
             let window = XCreateSimpleWindow(
                 display.display,
@@ -502,13 +531,13 @@ impl Window {
 
     pub fn set_background_pixel(&self, pixel: Pixel) {
         unsafe {
-            XSetBackground(self.display, self.gc, pixel.pixel);
+            XSetBackground(self.display, self.gc.as_raw(), pixel.pixel);
         }
     }
 
     pub fn set_foreground_pixel(&self, pixel: Pixel) {
         unsafe {
-            XSetForeground(self.display, self.gc, pixel.pixel);
+            XSetForeground(self.display, self.gc.as_raw(), pixel.pixel);
         }
     }
 
@@ -529,42 +558,42 @@ impl Window {
 
     pub fn fill_rectangle(&self,rect:Rectangle) {
         unsafe {
-            XSetForeground(self.display,self.gc,rect.pixel.pixel);
-            XSetBackground(self.display,self.gc,rect.pixel.pixel);
-            XFillRectangle(self.display,self.buffer,self.gc,rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
+            XSetForeground(self.display,self.gc.as_raw(),rect.pixel.pixel);
+            XSetBackground(self.display,self.gc.as_raw(),rect.pixel.pixel);
+            XFillRectangle(self.display,self.buffer,self.gc.as_raw(),rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
         }
     }
 
     pub fn draw_rectangle(&self,rect:Rectangle) {
         unsafe {
-            XSetForeground(self.display,self.gc,rect.pixel.pixel);
-            XSetBackground(self.display,self.gc,rect.pixel.pixel);
-            XDrawRectangle(self.display,self.buffer,self.gc,rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
+            XSetForeground(self.display,self.gc.as_raw(),rect.pixel.pixel);
+            XSetBackground(self.display,self.gc.as_raw(),rect.pixel.pixel);
+            XDrawRectangle(self.display,self.buffer,self.gc.as_raw()    ,rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
         }
     }
 
     pub fn fill_arc(&self,arc:Arc) {
         unsafe {
-            XSetForeground(self.display,self.gc,arc.pixel.pixel);
-            XSetBackground(self.display,self.gc,arc.pixel.pixel);
-            XFillArc(self.display,self.buffer,self.gc,arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
+            XSetForeground(self.display,self.gc.as_raw(),arc.pixel.pixel);
+            XSetBackground(self.display,self.gc.as_raw(),arc.pixel.pixel);
+            XFillArc(self.display,self.buffer,self.gc.as_raw(),arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
         }
     }
 
     pub fn draw_arc(&self,arc:Arc) {
         unsafe {
-            XSetForeground(self.display,self.gc,arc.pixel.pixel);
-            XSetBackground(self.display,self.gc,arc.pixel.pixel);
-            XDrawArc(self.display,self.buffer,self.gc,arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
+            XSetForeground(self.display,self.gc.as_raw(),arc.pixel.pixel);
+            XSetBackground(self.display,self.gc.as_raw(),arc.pixel.pixel);
+            XDrawArc(self.display,self.buffer,self.gc.as_raw(),arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
         }
     }
 
     pub fn draw_string(&self,string:&str,x:i32,y:i32,color:Pixel) {
         unsafe {
-            XSetForeground(self.display,self.gc,color.pixel);
-            XSetBackground(self.display,self.gc,color.pixel);
+            XSetForeground(self.display,self.gc.as_raw(),color.pixel);
+            XSetBackground(self.display,self.gc.as_raw(),color.pixel);
             let len = string.len();
-            XDrawString(self.display,self.buffer,self.gc,x as c_int,y as c_int,CString::new(string).unwrap().as_ptr(),len as c_int);
+            XDrawString(self.display,self.buffer,self.gc.as_raw(),x as c_int,y as c_int,CString::new(string).unwrap().as_ptr(),len as c_int);
         }
     }
 
@@ -572,6 +601,10 @@ impl Window {
         unsafe {
             _get_geometry(self.display,self.window)
         }
+    }
+
+    pub fn get_gc(&self) -> &GC {
+        &self.gc
     }
 
     pub fn copy_to_buffer(&self) {
@@ -582,7 +615,7 @@ impl Window {
                 self.display,
                 self.buffer,
                 self.window,
-                self.gc,
+                self.gc.as_raw(),
                 0,
                 0,
                 geometry.width as c_uint,
@@ -595,7 +628,7 @@ impl Window {
 
     pub fn flush_gc(&self) {
         unsafe {
-            XFlushGC(self.display, self.gc);
+            XFlushGC(self.display, self.gc.as_raw());
         }
     }
 
@@ -631,7 +664,7 @@ impl Window {
     }
 
     pub unsafe fn from_raw(display: &Display, screen: &Screen, window: c_ulong,buffer:Option<()>) -> Self {
-        let gc = XDefaultGC(display.display, screen.screen);
+        let gc = GC(XDefaultGC(display.display, screen.screen));
         let geometry = _get_geometry(display.display,window);
         let buffer = match buffer {
             None => window,

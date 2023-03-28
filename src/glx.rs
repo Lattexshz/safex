@@ -1,13 +1,28 @@
+use std::ffi::c_int;
 use crate::xlib::{Display, AsRaw, Window};
 use x11::glx::*;
 
-pub fn enable_glx(window: &Window,display: &Display) -> Result<(),()> {
-    unsafe {
-        let attr = [ GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_NONE ];
-        let mut vi = glXChooseVisual(display.as_raw(), 0, attr.as_mut_ptr());
-        if vi = std::ptr::null_mut() {
-            return Err(());
-        }
+pub type GLXAttribute = c_int;
+
+macro_rules! export {
+    ($cons:ident,$type_:ident) => {
+        pub const $cons: $type_ = x11::xlib::$cons as $type_;
+    };
+}
+
+export!(GLX_SLOW_CONFIG,GLXAttribute);
+export!(GLX_NON_CONFORMANT_CONFIG,GLXAttribute);
+
+pub struct GLXContext {
+
+}
+
+pub struct GLXWindow {
+    inner: Window
+}
+
+impl GLXWindow {
+    pub fn new() {
+        
     }
-    Ok(())
 }
