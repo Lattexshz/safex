@@ -70,6 +70,10 @@ export!(CWDontPropagate, WindowAttribute);
 export!(CWColormap, WindowAttribute);
 export!(CWCursor, WindowAttribute);
 
+pub trait AsRaw<T> {
+    fn as_raw(&self) -> T;
+}
+
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Arc {
     pub x:u32,
@@ -98,7 +102,7 @@ pub struct Color<'a> {
 
 impl<'a> Color<'a> {
     pub fn from_rgb(display: &Display, cmap: &ColorMap, r: u16, g: u16, b: u16) -> Self {
-        let mut color: XColor = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+        let mut color: XColor = unsafe { MaybeUninit::uninit().assume_init() };
 
         color.red = r as c_ushort;
         color.green = g as c_ushort;
@@ -131,6 +135,12 @@ impl ColorMap {
     pub fn default(display: &Display, screen: &Screen) -> Self {
         let cmap = unsafe { XDefaultColormap(display.display, screen.screen) };
         Self { cmap }
+    }
+}
+
+impl AsRaw<c_ulong> for ColorMap {
+    fn as_raw(&self) -> c_ulong {
+        self.cmap
     }
 }
 
@@ -197,6 +207,12 @@ impl Drop for Display {
     }
 }
 
+impl AsRaw<*mut x11::xlib::Display> for Display {
+    fn as_raw(&self) -> *mut x11::xlib::Display {
+        self.display
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Geometry {
     pub x: i32,
@@ -223,8 +239,8 @@ impl Pixel {
 
         Self { pixel }
     }
-    pub fn from_rgb(r: u8, g: u8, b: u8) -> Self {
-        Self { pixel: 0 }
+    pub fn from_rgb(display: &Display,cmap: &ColorMap,r: u16, g: u16, b: u16) -> Self {
+        Color::from_rgb(display,cmap,r,g,b).pixel
     }
 }
 
@@ -260,6 +276,12 @@ impl PixMap {
     }
 }
 
+impl AsRaw<c_ulong> for PixMap {
+    fn as_raw(&self) -> c_ulong {
+        self.pixmap
+    }
+}
+
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Rectangle {
     pub x:u32,
@@ -284,6 +306,12 @@ impl Screen {
     }
 }
 
+impl AsRaw<c_int> for Screen {
+    fn as_raw(&self) -> c_int {
+        self.screen
+    }
+}
+
 pub struct Visual {
     visual: *mut x11::xlib::Visual,
 }
@@ -292,6 +320,12 @@ impl Visual {
     pub fn default(display: &Display, screen: &Screen) -> Self {
         let visual = unsafe { XDefaultVisual(display.display, screen.screen) };
         Self { visual }
+    }
+}
+
+impl AsRaw<*mut x11::xlib::Visual> for Visual {
+    fn as_raw(&self) -> *mut x11::xlib::Visual {
+        self.visual
     }
 }
 
@@ -320,6 +354,12 @@ impl WindowAttributesBuilder {
     pub fn backing_pixel(mut self, pixel: Pixel) -> Self {
         self.attributes.backing_pixel = pixel.pixel;
         self
+    }
+}
+
+impl AsRaw<XSetWindowAttributes> for WindowAttributesBuilder {
+    fn as_raw(&self) -> XSetWindowAttributes {
+        self.attributes
     }
 }
 
@@ -614,6 +654,12 @@ impl Drop for Window {
                 XDestroyWindow(self.display, self.window);
             }
         }
+    }
+}
+
+impl AsRaw<c_ulong> for Window {
+    fn as_raw(&self) -> c_ulong {
+        self.window
     }
 }
 
