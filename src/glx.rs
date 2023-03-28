@@ -1,5 +1,5 @@
 use crate::xlib::{AsRaw, CWColormap, CWEventMask, ColorMap, ControlFlow, Display, ExposureMask, InputOutput, KeyPressMask, Screen, Visual, Window, WindowAttributesBuilder, WindowEvent, VisualInfo, WindowClass, Mask};
-use std::ffi::{c_int, c_uchar, c_void};
+use std::ffi::{c_int, c_uchar, c_void, CString};
 use std::mem::MaybeUninit;
 use std::ptr::addr_of_mut;
 use x11::glx::*;
@@ -88,10 +88,9 @@ impl GLXContext {
         Self { glc }
     }
 
-    pub fn get_proc_address(&self,display: &Display,screen: &Screen) -> Option<unsafe extern "C" fn()> {
+    pub fn get_proc_address(&self,string: &str) -> Option<unsafe extern "C" fn()> {
         unsafe {
-            let string = glXGetClientString(display.as_raw(),screen.as_raw());
-            glXGetProcAddress(string as *const c_uchar)
+            glXGetProcAddress(CString::new(string).unwrap().as_ptr() as *const c_uchar)
         }
     }
 }

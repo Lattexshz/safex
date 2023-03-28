@@ -17,7 +17,7 @@ fn main() {
     glx_make_current(&display,&window,&glc);
 
     gl::load_with(|string| {
-        glc.get_proc_address(&display,&screen).unwrap() as *mut c_void
+        glc.get_proc_address(string).unwrap() as *mut c_void
     });
 
     unsafe {
