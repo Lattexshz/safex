@@ -1,7 +1,8 @@
 use crate::xlib::{AsRaw, CWColormap, CWEventMask, ColorMap, ControlFlow, Display, ExposureMask, InputOutput, KeyPressMask, Screen, Visual, Window, WindowAttributesBuilder, WindowEvent, VisualInfo, WindowClass, Mask};
-use std::ffi::c_int;
+use std::ffi::{c_int, c_uchar, c_void};
 use std::mem::MaybeUninit;
 use std::ptr::addr_of_mut;
+use gl33::GLenum;
 use x11::glx::*;
 use x11::xlib::*;
 
@@ -70,7 +71,7 @@ pub struct GLXContext {
 }
 
 impl GLXContext {
-    pub fn create(display: &Display,vi: VisualInfo,glc: Option<GLXContext>,flag: i32) -> Self {
+    pub fn create(display: &Display, vi: VisualInfo, glc: Option<GLXContext>, flag: GLenum) -> Self {
         let vi = XVisualInfo {
             visual: vi.visual.as_raw(),
             visualid: vi.visualid as VisualID,
@@ -86,6 +87,13 @@ impl GLXContext {
 
         let glc = unsafe { glXCreateContext(display.as_raw(), addr_of_mut!(vi),std::ptr::null_mut(), flag as c_int) };
         Self { glc }
+    }
+    
+    pub fn get_proc_address(&self,display: &Display,screen: &Screen) -> Option<fn()> {
+        unsafe {
+            let string = glXGetClientString(display.as_raw(),screen.as_raw());
+            glXGetProcAddress(string as *const c_uchar)
+        }
     }
 }
 
@@ -192,7 +200,7 @@ pub fn glx_choose_visual(attrs: &mut [GLXAttribute]) -> Result<VisualInfo,()> {
     Ok(vi)
 }
 
-pub fn glx_make_current(display: &Display,window: GLXWindow,glx: GLXContext) {
+pub fn glx_make_current(display: &Display,window: &GLXWindow,glx: GLXContext) {
     unsafe {
         glXMakeCurrent(display.as_raw(),window.inner.as_raw(),glx.as_raw());
     }

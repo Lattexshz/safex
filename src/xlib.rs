@@ -370,6 +370,7 @@ impl AsRaw<*mut x11::xlib::Visual> for Visual {
     }
 }
 
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub struct VisualInfo {
     pub visual: Visual,
     pub visualid: VisualID,

@@ -16,8 +16,8 @@ xlib = [ "x11/xlib" ]
 
 [dependencies]
 x11 = { version = "2.21.0" }
-gl = { version = "0.14.0" }
 
 [dev-dependencies]
 winit = "0.28.3"
+gl = "0.14.0"
 raw-window-handle = "0.5.1"
