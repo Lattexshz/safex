@@ -13,8 +13,8 @@ fn main() {
     )
     .unwrap();
 
-    let glc = GLXContext::create(&display,&vi,None,gl33::GL_TRUE);
-    glx_make_current(&display,&window,glc);
+    let glc = GLXContext::create(&display, &vi, None, gl::TRUE as i32);
+    glx_make_current(&display,&window,&glc);
 
     gl::load_with(|string| {
         glc.get_proc_address(&display,&screen).unwrap() as *mut c_void
