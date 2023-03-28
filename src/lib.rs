@@ -1,7 +1,7 @@
-#[cfg(feature = "xlib")]
-pub mod xlib;
 #[cfg(feature = "glx")]
 pub mod glx;
+#[cfg(feature = "xlib")]
+pub mod xlib;
 
 pub(crate) mod util {
     use std::ffi::{c_char, CString};

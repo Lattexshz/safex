@@ -1,12 +1,13 @@
 use crate::util::str_to_c_char;
-use std::ffi::{c_char, c_int, c_uint, c_ulong,c_long, c_ushort, CStr, CString};
+use std::ffi::{c_char, c_int, c_long, c_uint, c_ulong, c_ushort, CStr, CString};
 use std::mem::MaybeUninit;
 use std::ptr::{addr_of, null_mut};
 use x11::xlib::*;
 
 type Buffer = c_ulong;
 
-pub type EventMask = c_ulong;
+pub type Mask = c_ulong;
+pub type VisualID = u64;
 
 // Re-Exports
 macro_rules! export {
@@ -22,31 +23,31 @@ macro_rules! cast {
 }
 
 // EventMasks
-export!(NoEventMask, EventMask);
-export!(KeyPressMask, EventMask);
-export!(KeyReleaseMask, EventMask);
-export!(ButtonPressMask, EventMask);
-export!(ButtonReleaseMask, EventMask);
-export!(EnterWindowMask, EventMask);
-export!(LeaveWindowMask, EventMask);
-export!(PointerMotionMask, EventMask);
-export!(PointerMotionHintMask, EventMask);
-export!(Button1MotionMask, EventMask);
-export!(Button2MotionMask, EventMask);
-export!(Button3MotionMask, EventMask);
-export!(Button4MotionMask, EventMask);
-export!(Button5MotionMask, EventMask);
-export!(KeymapStateMask, EventMask);
-export!(ExposureMask, EventMask);
-export!(VisibilityChangeMask, EventMask);
-export!(StructureNotifyMask, EventMask);
-export!(ResizeRedirectMask, EventMask);
-export!(SubstructureNotifyMask, EventMask);
-export!(SubstructureRedirectMask, EventMask);
-export!(FocusChangeMask, EventMask);
-export!(PropertyChangeMask, EventMask);
-export!(ColormapChangeMask, EventMask);
-export!(OwnerGrabButtonMask, EventMask);
+export!(NoEventMask, Mask);
+export!(KeyPressMask, Mask);
+export!(KeyReleaseMask, Mask);
+export!(ButtonPressMask, Mask);
+export!(ButtonReleaseMask, Mask);
+export!(EnterWindowMask, Mask);
+export!(LeaveWindowMask, Mask);
+export!(PointerMotionMask, Mask);
+export!(PointerMotionHintMask, Mask);
+export!(Button1MotionMask, Mask);
+export!(Button2MotionMask, Mask);
+export!(Button3MotionMask, Mask);
+export!(Button4MotionMask, Mask);
+export!(Button5MotionMask, Mask);
+export!(KeymapStateMask, Mask);
+export!(ExposureMask, Mask);
+export!(VisibilityChangeMask, Mask);
+export!(StructureNotifyMask, Mask);
+export!(ResizeRedirectMask, Mask);
+export!(SubstructureNotifyMask, Mask);
+export!(SubstructureRedirectMask, Mask);
+export!(FocusChangeMask, Mask);
+export!(PropertyChangeMask, Mask);
+export!(ColormapChangeMask, Mask);
+export!(OwnerGrabButtonMask, Mask);
 
 pub type WindowClass = c_uint;
 
@@ -74,15 +75,15 @@ pub trait AsRaw<T> {
     fn as_raw(&self) -> T;
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Arc {
-    pub x:u32,
-    pub y:u32,
-    pub width:u32,
-    pub height:u32,
-    pub angle1:u32,
-    pub angle2:u32,
-    pub pixel: Pixel
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+    pub angle1: u32,
+    pub angle2: u32,
+    pub pixel: Pixel,
 }
 
 pub enum ControlFlow {
@@ -132,6 +133,19 @@ pub struct ColorMap {
 }
 
 impl ColorMap {
+    pub fn create(display: &Display, window: &Window, visual: &Visual) -> Self {
+        let cmap = unsafe {
+            XCreateColormap(
+                display.as_raw(),
+                window.as_raw(),
+                visual.as_raw(),
+                AllocNone,
+            )
+        };
+
+        Self { cmap }
+    }
+
     pub fn default(display: &Display, screen: &Screen) -> Self {
         let cmap = unsafe { XDefaultColormap(display.display, screen.screen) };
         Self { cmap }
@@ -223,12 +237,10 @@ pub struct Geometry {
     pub depth: u32,
 }
 
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GC(x11::xlib::GC);
 
-impl GC {
-
-}
+impl GC {}
 
 impl AsRaw<x11::xlib::GC> for GC {
     fn as_raw(&self) -> x11::xlib::GC {
@@ -252,8 +264,8 @@ impl Pixel {
 
         Self { pixel }
     }
-    pub fn from_rgb(display: &Display,cmap: &ColorMap,r: u16, g: u16, b: u16) -> Self {
-        Color::from_rgb(display,cmap,r,g,b).pixel
+    pub fn from_rgb(display: &Display, cmap: &ColorMap, r: u16, g: u16, b: u16) -> Self {
+        Color::from_rgb(display, cmap, r, g, b).pixel
     }
 }
 
@@ -281,7 +293,13 @@ impl PixMap {
         Self { pixmap }
     }
 
-    pub fn from_raw(display: &Display, window: c_ulong, width: u32, height: u32, depth: u32) -> Self {
+    pub fn from_raw(
+        display: &Display,
+        window: c_ulong,
+        width: u32,
+        height: u32,
+        depth: u32,
+    ) -> Self {
         let pixmap = unsafe {
             XCreatePixmap(
                 display.display,
@@ -301,13 +319,13 @@ impl AsRaw<c_ulong> for PixMap {
     }
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Rectangle {
-    pub x:u32,
-    pub y:u32,
-    pub width:u32,
-    pub height:u32,
-    pub pixel: Pixel
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+    pub pixel: Pixel,
 }
 
 pub struct Screen {
@@ -340,6 +358,10 @@ impl Visual {
         let visual = unsafe { XDefaultVisual(display.display, screen.screen) };
         Self { visual }
     }
+
+    pub fn from_raw(visual: *mut x11::xlib::Visual) -> Self {
+        Self { visual }
+    }
 }
 
 impl AsRaw<*mut x11::xlib::Visual> for Visual {
@@ -348,14 +370,26 @@ impl AsRaw<*mut x11::xlib::Visual> for Visual {
     }
 }
 
+pub struct VisualInfo {
+    pub visual: Visual,
+    pub visualid: VisualID,
+    pub screen: Screen,
+    pub depth: i32,
+    pub class: WindowClass,
+    pub red_mask: Mask,
+    pub green_mask: Mask,
+    pub blue_mask: Mask,
+    pub colormap_size: i32,
+    pub bits_per_rgb: i32
+}
+
 pub struct WindowAttributesBuilder {
     attributes: XSetWindowAttributes,
 }
 
 impl WindowAttributesBuilder {
     pub fn new() -> Self {
-        let attributes: XSetWindowAttributes =
-            unsafe { MaybeUninit::uninit().assume_init() };
+        let attributes: XSetWindowAttributes = unsafe { MaybeUninit::uninit().assume_init() };
 
         Self { attributes }
     }
@@ -380,7 +414,7 @@ impl WindowAttributesBuilder {
         self
     }
 
-    pub fn event_mask(mut self,mask: EventMask) -> Self {
+    pub fn event_mask(mut self, mask: Mask) -> Self {
         self.attributes.event_mask = mask as c_long;
         self
     }
@@ -457,7 +491,7 @@ impl Window {
 
             let buffer = match buffer {
                 None => window,
-                Some(_) => PixMap::from_raw(&display, window, width, height, depth as u32).pixmap
+                Some(_) => PixMap::from_raw(&display, window, width, height, depth as u32).pixmap,
             };
 
             unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
@@ -466,7 +500,7 @@ impl Window {
                 window,
                 buffer,
                 display: display.display,
-                gc
+                gc,
             }
         }
     }
@@ -504,11 +538,11 @@ impl Window {
                 pixel.pixel,
             );
 
-            let geometry = _get_geometry(display.display,window);
+            let geometry = _get_geometry(display.display, window);
 
             let buffer = match buffer {
                 None => window,
-                Some(_) => PixMap::from_raw(&display,window,width,height,geometry.depth).pixmap
+                Some(_) => PixMap::from_raw(&display, window, width, height, geometry.depth).pixmap,
             };
 
             unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
@@ -556,51 +590,93 @@ impl Window {
         }
     }
 
-    pub fn fill_rectangle(&self,rect:Rectangle) {
+    pub fn fill_rectangle(&self, rect: Rectangle) {
         unsafe {
-            XSetForeground(self.display,self.gc.as_raw(),rect.pixel.pixel);
-            XSetBackground(self.display,self.gc.as_raw(),rect.pixel.pixel);
-            XFillRectangle(self.display,self.buffer,self.gc.as_raw(),rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
+            XSetForeground(self.display, self.gc.as_raw(), rect.pixel.pixel);
+            XSetBackground(self.display, self.gc.as_raw(), rect.pixel.pixel);
+            XFillRectangle(
+                self.display,
+                self.buffer,
+                self.gc.as_raw(),
+                rect.x as c_int,
+                rect.y as c_int,
+                rect.width as c_uint,
+                rect.height as c_uint,
+            );
         }
     }
 
-    pub fn draw_rectangle(&self,rect:Rectangle) {
+    pub fn draw_rectangle(&self, rect: Rectangle) {
         unsafe {
-            XSetForeground(self.display,self.gc.as_raw(),rect.pixel.pixel);
-            XSetBackground(self.display,self.gc.as_raw(),rect.pixel.pixel);
-            XDrawRectangle(self.display,self.buffer,self.gc.as_raw()    ,rect.x as c_int,rect.y as c_int,rect.width as c_uint,rect.height as c_uint);
+            XSetForeground(self.display, self.gc.as_raw(), rect.pixel.pixel);
+            XSetBackground(self.display, self.gc.as_raw(), rect.pixel.pixel);
+            XDrawRectangle(
+                self.display,
+                self.buffer,
+                self.gc.as_raw(),
+                rect.x as c_int,
+                rect.y as c_int,
+                rect.width as c_uint,
+                rect.height as c_uint,
+            );
         }
     }
 
-    pub fn fill_arc(&self,arc:Arc) {
+    pub fn fill_arc(&self, arc: Arc) {
         unsafe {
-            XSetForeground(self.display,self.gc.as_raw(),arc.pixel.pixel);
-            XSetBackground(self.display,self.gc.as_raw(),arc.pixel.pixel);
-            XFillArc(self.display,self.buffer,self.gc.as_raw(),arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
+            XSetForeground(self.display, self.gc.as_raw(), arc.pixel.pixel);
+            XSetBackground(self.display, self.gc.as_raw(), arc.pixel.pixel);
+            XFillArc(
+                self.display,
+                self.buffer,
+                self.gc.as_raw(),
+                arc.x as c_int,
+                arc.y as c_int,
+                arc.width as c_uint,
+                arc.height as c_uint,
+                arc.angle1 as c_int,
+                arc.angle2 as c_int,
+            );
         }
     }
 
-    pub fn draw_arc(&self,arc:Arc) {
+    pub fn draw_arc(&self, arc: Arc) {
         unsafe {
-            XSetForeground(self.display,self.gc.as_raw(),arc.pixel.pixel);
-            XSetBackground(self.display,self.gc.as_raw(),arc.pixel.pixel);
-            XDrawArc(self.display,self.buffer,self.gc.as_raw(),arc.x as c_int,arc.y as c_int,arc.width as c_uint,arc.height as c_uint,arc.angle1 as c_int,arc.angle2 as c_int);
+            XSetForeground(self.display, self.gc.as_raw(), arc.pixel.pixel);
+            XSetBackground(self.display, self.gc.as_raw(), arc.pixel.pixel);
+            XDrawArc(
+                self.display,
+                self.buffer,
+                self.gc.as_raw(),
+                arc.x as c_int,
+                arc.y as c_int,
+                arc.width as c_uint,
+                arc.height as c_uint,
+                arc.angle1 as c_int,
+                arc.angle2 as c_int,
+            );
         }
     }
 
-    pub fn draw_string(&self,string:&str,x:i32,y:i32,color:Pixel) {
+    pub fn draw_string(&self, string: &str, x: i32, y: i32, color: Pixel) {
         unsafe {
-            XSetForeground(self.display,self.gc.as_raw(),color.pixel);
-            XSetBackground(self.display,self.gc.as_raw(),color.pixel);
+            XSetForeground(self.display, self.gc.as_raw(), color.pixel);
+            XSetBackground(self.display, self.gc.as_raw(), color.pixel);
             let len = string.len();
-            XDrawString(self.display,self.buffer,self.gc.as_raw(),x as c_int,y as c_int,CString::new(string).unwrap().as_ptr(),len as c_int);
+            XDrawString(
+                self.display,
+                self.buffer,
+                self.gc.as_raw(),
+                x as c_int,
+                y as c_int,
+                CString::new(string).unwrap().as_ptr(),
+                len as c_int,
+            );
         }
     }
 
     pub fn get_geometry(&self) -> Geometry {
-        unsafe {
-            _get_geometry(self.display,self.window)
-        }
+        unsafe { _get_geometry(self.display, self.window) }
     }
 
     pub fn get_gc(&self) -> &GC {
@@ -639,8 +715,8 @@ impl Window {
     }
 
     pub fn run<F>(&self, func: F)
-        where
-            F: Fn(WindowEvent, &mut ControlFlow),
+    where
+        F: Fn(WindowEvent, &mut ControlFlow),
     {
         unsafe {
             let mut control_flow = ControlFlow::Wait;
@@ -655,20 +731,32 @@ impl Window {
                     Expose => {
                         func(WindowEvent::Expose, &mut control_flow);
                     }
-                    _ => {
-
-                    }
+                    _ => {}
                 }
             }
         }
     }
 
-    pub unsafe fn from_raw(display: &Display, screen: &Screen, window: c_ulong,buffer:Option<()>) -> Self {
+    pub unsafe fn from_raw(
+        display: &Display,
+        screen: &Screen,
+        window: c_ulong,
+        buffer: Option<()>,
+    ) -> Self {
         let gc = GC(XDefaultGC(display.display, screen.screen));
-        let geometry = _get_geometry(display.display,window);
+        let geometry = _get_geometry(display.display, window);
         let buffer = match buffer {
             None => window,
-            Some(_) => PixMap::from_raw(&display,window,geometry.width,geometry.height,geometry.depth).pixmap
+            Some(_) => {
+                PixMap::from_raw(
+                    &display,
+                    window,
+                    geometry.width,
+                    geometry.height,
+                    geometry.depth,
+                )
+                .pixmap
+            }
         };
 
         Self {
@@ -696,7 +784,7 @@ impl AsRaw<c_ulong> for Window {
     }
 }
 
-fn _get_geometry(display: *mut x11::xlib::Display,window:c_ulong) -> Geometry {
+fn _get_geometry(display: *mut x11::xlib::Display, window: c_ulong) -> Geometry {
     unsafe {
         let mut root = 0;
         let mut x = 0;
