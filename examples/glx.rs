@@ -148,6 +148,8 @@ fn main() {
         );
     }
 
+    window.map();
+
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {
             unsafe {

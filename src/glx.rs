@@ -146,6 +146,12 @@ impl GLXWindow {
         }
     }
 
+    pub fn map(&self) {
+        unsafe {
+            XMapWindow(self.display,self.inner.as_raw());
+        }
+    }
+
     pub fn run<F>(&self, func: F)
         where
             F: Fn(WindowEvent, &mut ControlFlow),
