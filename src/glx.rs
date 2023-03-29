@@ -203,8 +203,8 @@ pub fn glx_choose_visual(display: &Display,attrs: &mut [GLXAttribute]) -> Result
     Ok(vi)
 }
 
-pub fn glx_make_current(display: &Display,window: &GLXWindow,glx: &GLXContext) {
+pub fn glx_make_current(display: &Display,window: &Window,glx: &GLXContext) {
     unsafe {
-        glXMakeCurrent(display.as_raw(),window.inner.as_raw(),glx.as_raw());
+        glXMakeCurrent(display.as_raw(),window.as_raw(),glx.as_raw());
     }
 }

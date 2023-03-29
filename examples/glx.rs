@@ -9,14 +9,14 @@ static VERTEX_DATA: [GLfloat; 6] = [0.0, 0.5, 0.5, -0.5, -0.5, -0.5];
 
 // Shader sources
 static VS_SRC: &'static str = "
-#version 150
+#version 140
 in vec2 position;
 void main() {
     gl_Position = vec4(position, 0.0, 1.0);
 }";
 
 static FS_SRC: &'static str = "
-#version 150
+#version 140
 out vec4 out_color;
 void main() {
     out_color = vec4(1.0, 1.0, 1.0, 1.0);
@@ -49,7 +49,7 @@ fn compile_shader(src: &str, ty: GLenum) -> GLuint {
             );
             panic!(
                 "{}",
-                str::from_utf8(&buf)
+                std::str::from_utf8(&buf)
                     .ok()
                     .expect("ShaderInfoLog not valid utf8")
             );
@@ -82,7 +82,7 @@ fn link_program(vs: GLuint, fs: GLuint) -> GLuint {
             );
             panic!(
                 "{}",
-                str::from_utf8(&buf)
+                std::str::from_utf8(&buf)
                     .ok()
                     .expect("ProgramInfoLog not valid utf8")
             );
@@ -95,12 +95,12 @@ fn main() {
     let display = Display::open(None);
     let screen = Screen::default(&display);
     let vi = glx_choose_visual(&display,&mut [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_NONE]).unwrap();
-    let window = GLXWindow::new(
+    let window = Window::new_with_glx(
         &display,
         &screen,
         &vi,
     )
-    .unwrap();
+        .unwrap();
 
     let glc = GLXContext::create(&display, &vi, None, gl::TRUE as i32);
     glx_make_current(&display,&window,&glc);
@@ -148,7 +148,7 @@ fn main() {
         );
     }
 
-    window.map();
+    window.map(&display);
 
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {

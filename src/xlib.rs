@@ -2,6 +2,7 @@ use crate::util::str_to_c_char;
 use std::ffi::{c_char, c_int, c_long, c_uint, c_ulong, c_ushort, CStr, CString};
 use std::mem::MaybeUninit;
 use std::ptr::{addr_of, null_mut};
+use x11::glx::glXSwapBuffers;
 use x11::xlib::*;
 
 type Buffer = c_ulong;
@@ -556,6 +557,64 @@ impl Window {
                 display: display.display,
                 gc,
             }
+        }
+    }
+
+    #[cfg(feature="glx")]
+    pub fn new_with_glx(display: &Display, screen: &Screen, vi: &VisualInfo) -> Result<Self, ()> {
+        let visual = unsafe { Visual::from_raw(vi.visual.as_raw()) };
+
+        let cmap = ColorMap::create(display, &root, &visual);
+
+        let attribute = WindowAttributesBuilder::new()
+            .colormap(cmap)
+            .event_mask(ExposureMask | KeyPressMask);
+
+        let parent = match parent {
+            None => 0,
+            Some(p) => p.buffer,
+        };
+
+        let gc = GC(unsafe {
+            XDefaultGC(display.display, screen.screen)
+        });
+
+        let window = unsafe {
+            XCreateWindow(
+                display.display,
+                parent,
+                x as c_int,
+                y as c_int,
+                width as c_uint,
+                height as c_uint,
+                border_width as c_uint,
+                depth as c_int,
+                class as c_uint,
+                visual.visual,
+                valuemask as c_ulong,
+                &mut attribute.as_raw(),
+            )
+        };
+
+        let buffer = match buffer {
+            None => window,
+            Some(_) => PixMap::from_raw(&display, window, width, height, depth as u32).pixmap,
+        };
+
+        unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
+
+        Ok(Self {
+            window,
+            display: display.as_raw(),
+            buffer,
+            gc,
+        })
+    }
+
+    #[cfg(feature="glx")]
+    pub fn glx_swap_buffers(&self) {
+        unsafe {
+            glXSwapBuffers(self.display, self.inner.as_raw());
         }
     }
 
