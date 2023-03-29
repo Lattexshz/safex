@@ -11,7 +11,9 @@ readme = "README.md"
 
 [features]
 glx = [ "x11/glx","xlib" ]
-
+xinput = ["x11/xinput"]
+xcursor = ["xlib","x11/xcursor"]
+xlib_xcb = ["xlib","x11/xlib_xcb"]
 xlib = [ "x11/xlib" ]
 
 [dependencies]

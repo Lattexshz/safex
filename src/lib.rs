@@ -2,6 +2,12 @@
 pub mod glx;
 #[cfg(feature = "xlib")]
 pub mod xlib;
+#[cfg(feature = "xinput")]
+pub mod xinput;
+#[cfg(feature = "xcursor")]
+pub mod xcursor;
+#[cfg(feature = "xlib_xcb")]
+pub mod xcb;
 
 pub(crate) mod util {
     use std::ffi::{c_char, CString};
