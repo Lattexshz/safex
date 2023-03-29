@@ -1,4 +1,8 @@
-use crate::xlib::{AsRaw, CWColormap, CWEventMask, ColorMap, ControlFlow, Display, ExposureMask, InputOutput, KeyPressMask, Screen, Visual, Window, WindowAttributesBuilder, WindowEvent, VisualInfo, WindowClass, Mask};
+use crate::xlib::{
+    AsRaw, CWColormap, CWEventMask, ColorMap, ControlFlow, Display, ExposureMask, InputOutput,
+    KeyPressMask, Mask, Screen, Visual, VisualInfo, Window, WindowAttributesBuilder, WindowClass,
+    WindowEvent,
+};
 use std::ffi::{c_int, c_uchar, c_void, CString};
 use std::mem::MaybeUninit;
 use std::ptr::addr_of_mut;
@@ -66,7 +70,7 @@ export!(GLX_NONE, GLXAttribute);
 export!(GLX_RGBA, GLXAttribute);
 
 pub struct GLXContext {
-    glc: x11::glx::GLXContext
+    glc: x11::glx::GLXContext,
 }
 
 impl GLXContext {
@@ -84,14 +88,19 @@ impl GLXContext {
             bits_per_rgb: vi.bits_per_rgb,
         };
 
-        let glc = unsafe { glXCreateContext(display.as_raw(), addr_of_mut!(vi),std::ptr::null_mut(), flag as c_int) };
+        let glc = unsafe {
+            glXCreateContext(
+                display.as_raw(),
+                addr_of_mut!(vi),
+                std::ptr::null_mut(),
+                flag as c_int,
+            )
+        };
         Self { glc }
     }
 
-    pub fn get_proc_address(&self,string: &str) -> Option<unsafe extern "C" fn()> {
-        unsafe {
-            glXGetProcAddress(CString::new(string).unwrap().as_ptr() as *const c_uchar)
-        }
+    pub fn get_proc_address(&self, string: &str) -> Option<unsafe extern "C" fn()> {
+        unsafe { glXGetProcAddress(CString::new(string).unwrap().as_ptr() as *const c_uchar) }
     }
 }
 
@@ -101,82 +110,7 @@ impl AsRaw<x11::glx::GLXContext> for GLXContext {
     }
 }
 
-pub struct GLXWindow {
-    inner: Window,
-    display: *mut x11::xlib::Display,
-}
-
-impl GLXWindow {
-    pub fn new(display: &Display, screen: &Screen, vi: &VisualInfo) -> Result<Self, ()> {
-        let root = Window::root_window(display, screen);
-        let visual = unsafe { Visual::from_raw(vi.visual.as_raw()) };
-
-        let cmap = ColorMap::create(display, &root, &visual);
-
-        let attribute = WindowAttributesBuilder::new()
-            .colormap(cmap)
-            .event_mask(ExposureMask | KeyPressMask);
-
-        let inner = Window::create(
-            &display,
-            &screen,
-            None,
-            Some(root),
-            0,
-            0,
-            100,
-            100,
-            1,
-            vi.depth,
-            InputOutput,
-            &visual,
-            CWColormap | CWEventMask,
-            attribute,
-        );
-
-        Ok(Self {
-            inner,
-            display: display.as_raw(),
-        })
-    }
-
-    pub fn glx_swap_buffers(&self) {
-        unsafe {
-            glXSwapBuffers(self.display, self.inner.as_raw());
-        }
-    }
-
-    pub fn map(&self) {
-        unsafe {
-            XMapWindow(self.display,self.inner.as_raw());
-        }
-    }
-
-    pub fn run<F>(&self, func: F)
-        where
-            F: Fn(WindowEvent, &mut ControlFlow),
-    {
-        unsafe {
-            let mut control_flow = ControlFlow::Wait;
-            loop {
-                let event = unsafe {
-                    let mut event = MaybeUninit::uninit();
-                    XNextEvent(self.display, event.as_mut_ptr());
-                    event.assume_init()
-                };
-
-                match event.type_ {
-                    Expose => {
-                        func(WindowEvent::Expose, &mut control_flow);
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-}
-
-pub fn glx_choose_visual(display: &Display,attrs: &mut [GLXAttribute]) -> Result<VisualInfo,()> {
+pub fn glx_choose_visual(display: &Display, attrs: &mut [GLXAttribute]) -> Result<VisualInfo, ()> {
     let mut vi = unsafe {
         let mut vi = glXChooseVisual(display.as_raw(), 0, attrs.as_mut_ptr());
         if vi == std::ptr::null_mut() {
@@ -203,8 +137,8 @@ pub fn glx_choose_visual(display: &Display,attrs: &mut [GLXAttribute]) -> Result
     Ok(vi)
 }
 
-pub fn glx_make_current(display: &Display,window: &Window,glx: &GLXContext) {
+pub fn glx_make_current(display: &Display, window: &Window, glx: &GLXContext) {
     unsafe {
-        glXMakeCurrent(display.as_raw(),window.as_raw(),glx.as_raw());
+        glXMakeCurrent(display.as_raw(), window.as_raw(), glx.as_raw());
     }
 }

@@ -329,7 +329,7 @@ pub struct Rectangle {
     pub pixel: Pixel,
 }
 
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Screen {
     screen: c_int,
 }
@@ -351,7 +351,7 @@ impl AsRaw<c_int> for Screen {
     }
 }
 
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Visual {
     visual: *mut x11::xlib::Visual,
 }
@@ -373,7 +373,7 @@ impl AsRaw<*mut x11::xlib::Visual> for Visual {
     }
 }
 
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VisualInfo {
     pub visual: Visual,
     pub visualid: VisualID,
@@ -384,7 +384,7 @@ pub struct VisualInfo {
     pub green_mask: Mask,
     pub blue_mask: Mask,
     pub colormap_size: i32,
-    pub bits_per_rgb: i32
+    pub bits_per_rgb: i32,
 }
 
 pub struct WindowAttributesBuilder {
@@ -560,38 +560,43 @@ impl Window {
         }
     }
 
-    #[cfg(feature="glx")]
-    pub fn new_with_glx(display: &Display, screen: &Screen, vi: &VisualInfo) -> Result<Self, ()> {
-        let visual = unsafe { Visual::from_raw(vi.visual.as_raw()) };
-
-        let cmap = ColorMap::create(display, &root, &visual);
+    #[cfg(feature = "glx")]
+    pub fn new_with_glx(
+        display: &Display,
+        screen: &Screen,
+        vi: &VisualInfo,
+        buffer: Option<()>,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        border_width: u32,
+        depth: i32,
+        class: WindowClass,
+        visual: &VisualInfo,
+    ) -> Result<Self, ()> {
+        let root = Window::root_window(display,screen);
+        let cmap = ColorMap::create(display, &root, &vi.visual);
 
         let attribute = WindowAttributesBuilder::new()
             .colormap(cmap)
             .event_mask(ExposureMask | KeyPressMask);
 
-        let parent = match parent {
-            None => 0,
-            Some(p) => p.buffer,
-        };
-
-        let gc = GC(unsafe {
-            XDefaultGC(display.display, screen.screen)
-        });
+        let gc = GC(unsafe { XDefaultGC(display.display, screen.screen) });
 
         let window = unsafe {
             XCreateWindow(
                 display.display,
-                parent,
+                root.as_raw(),
                 x as c_int,
                 y as c_int,
                 width as c_uint,
                 height as c_uint,
                 border_width as c_uint,
-                depth as c_int,
-                class as c_uint,
-                visual.visual,
-                valuemask as c_ulong,
+                vi.depth,
+                InputOutput,
+                vi.visual.as_raw(),
+                CWColormap | CWEventMask,
                 &mut attribute.as_raw(),
             )
         };
@@ -611,10 +616,10 @@ impl Window {
         })
     }
 
-    #[cfg(feature="glx")]
+    #[cfg(feature = "glx")]
     pub fn glx_swap_buffers(&self) {
         unsafe {
-            glXSwapBuffers(self.display, self.inner.as_raw());
+            glXSwapBuffers(self.display, self.as_raw());
         }
     }
 

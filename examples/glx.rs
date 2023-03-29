@@ -1,8 +1,8 @@
-use std::ffi::{c_void, CString};
-use std::{mem, ptr};
 use gl::types::{GLboolean, GLchar, GLenum, GLfloat, GLint, GLsizeiptr, GLuint};
 use safex::glx::*;
 use safex::xlib::*;
+use std::ffi::{c_void, CString};
+use std::{mem, ptr};
 
 // Vertex data
 static VERTEX_DATA: [GLfloat; 6] = [0.0, 0.5, 0.5, -0.5, -0.5, -0.5];
@@ -94,20 +94,17 @@ fn link_program(vs: GLuint, fs: GLuint) -> GLuint {
 fn main() {
     let display = Display::open(None);
     let screen = Screen::default(&display);
-    let vi = glx_choose_visual(&display,&mut [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_NONE]).unwrap();
-    let window = Window::new_with_glx(
+    let vi = glx_choose_visual(
         &display,
-        &screen,
-        &vi,
+        &mut [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_NONE],
     )
-        .unwrap();
+    .unwrap();
+    let window = Window::new_with_glx(&display, &screen, &vi,None, 0, 0, 200, 200, 1, 0, 0, &vi).unwrap();
 
     let glc = GLXContext::create(&display, &vi, None, gl::TRUE as i32);
-    glx_make_current(&display,&window,&glc);
+    glx_make_current(&display, &window, &glc);
 
-    gl::load_with(|string| {
-        glc.get_proc_address(string).unwrap() as *mut c_void
-    });
+    gl::load_with(|string| glc.get_proc_address(string).unwrap() as *mut c_void);
 
     let vs = compile_shader(VS_SRC, gl::VERTEX_SHADER);
     let fs = compile_shader(FS_SRC, gl::FRAGMENT_SHADER);
@@ -153,7 +150,7 @@ fn main() {
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {
             unsafe {
-                gl::Viewport(0,0,100,100);
+                gl::Viewport(0, 0, 100, 100);
                 gl::ClearColor(0.3, 0.3, 0.3, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT);
                 // Draw a triangle from the 3 vertices
