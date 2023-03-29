@@ -575,7 +575,7 @@ impl Window {
         class: WindowClass,
         visual: &VisualInfo,
     ) -> Result<Self, ()> {
-        let root = Window::root_window(display,screen);
+        let root = Window::root_window(display, screen);
         let cmap = ColorMap::create(display, &root, &vi.visual);
 
         let attribute = WindowAttributesBuilder::new()

@@ -99,7 +99,8 @@ fn main() {
         &mut [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_NONE],
     )
     .unwrap();
-    let window = Window::new_with_glx(&display, &screen, &vi,None, 0, 0, 200, 200, 1, 0, 0, &vi).unwrap();
+    let window =
+        Window::new_with_glx(&display, &screen, &vi, None, 0, 0, 200, 200, 1, 0, 0, &vi).unwrap();
 
     let glc = GLXContext::create(&display, &vi, None, gl::TRUE as i32);
     glx_make_current(&display, &window, &glc);

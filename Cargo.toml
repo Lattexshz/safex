@@ -1,6 +1,6 @@
 [package]
 name = "safex"
-version = "0.0.3-2"
+version = "0.0.4"
 edition = "2021"
 authors = ["Lattexshz"]
 description = "Safe x11 binding for rust"
