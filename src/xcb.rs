@@ -20,8 +20,7 @@ pub fn set_event_queue_owner(display:&Display,owner:EventQueueOwner) {
             EventQueueOwner::XLibOwnsEventQueue => XEventQueueOwner::XlibOwnsEventQueue,
             EventQueueOwner::XCBOwnsEventQueue => XEventQueueOwner::XCBOwnsEventQueue
         };
-        
+
         XSetEventQueueOwner(display.as_raw(),owner);
     }
 }
-

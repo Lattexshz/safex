@@ -7,6 +7,7 @@ use std::ffi::{c_int, c_uchar, c_void, CString};
 use std::mem::MaybeUninit;
 use std::ptr::addr_of_mut;
 use x11::glx::*;
+use x11::glx::arb::GLX_CONTEXT_MAJOR_VERSION_ARB;
 use x11::xlib::*;
 
 pub type GLXAttribute = c_int;
@@ -63,6 +64,9 @@ export!(GLX_MAX_PBUFFER_PIXELS, GLXAttribute);
 export!(GLX_SAMPLE_BUFFERS, GLXAttribute);
 export!(GLX_SAMPLES, GLXAttribute);
 
+export!(GLX_CONTEXT_MAJOR_VERSION_ARB,GLXAttribute);
+export!(GLX_CONTEXT_MINOR_VERSION_ARB,GLXAttribute);
+
 // Misc
 export!(GLX_DONT_CARE, GLXAttribute);
 export!(GLX_NONE, GLXAttribute);
@@ -75,6 +79,7 @@ pub struct GLXContext {
 
 impl GLXContext {
     pub fn create(display: &Display, vi: &VisualInfo, glc: Option<GLXContext>, flag: i32) -> Self {
+
         let mut vi = XVisualInfo {
             visual: vi.visual.as_raw(),
             visualid: vi.visualid as VisualID,
