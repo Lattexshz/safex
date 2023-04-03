@@ -775,15 +775,21 @@ impl Window {
         }
     }
 
-    pub fn map(&self, display: &Display) {
+    pub fn map(&self) {
         unsafe {
-            XMapWindow(display.display, self.window);
+            XMapWindow(self.display, self.window);
+        }
+    }
+
+    pub fn unmap(&self) {
+        unsafe {
+            XUnMapWindow(self.display,self.window)
         }
     }
 
     pub fn run<F>(&self, func: F)
     where
-        F: Fn(WindowEvent, &mut ControlFlow),
+        F: FnMut(WindowEvent, &mut ControlFlow),
     {
         unsafe {
             let mut control_flow = ControlFlow::Wait;
