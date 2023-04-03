@@ -78,7 +78,6 @@ pub struct GLXContext {
 
 impl GLXContext {
     pub fn create(display: &Display, vi: &VisualInfo, glc: Option<GLXContext>, flag: i32) -> Self {
-
         let mut vi = XVisualInfo {
             visual: vi.visual.as_raw(),
             visualid: vi.visualid as VisualID,
