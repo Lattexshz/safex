@@ -63,7 +63,7 @@ fn main() {
         pixel: color.get_pixel(),
     };
 
-    window.map(&display);
+    window.map();
     window.run(|event, control_flow| match event {
         WindowEvent::Expose => {
             window.set_window_background(white);

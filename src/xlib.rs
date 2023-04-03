@@ -783,13 +783,13 @@ impl Window {
 
     pub fn unmap(&self) {
         unsafe {
-            XUnMapWindow(self.display,self.window)
+            XUnmapWindow(self.display,self.window);
         }
     }
 
-    pub fn run<F>(&self, func: F)
-    where
-        F: FnMut(WindowEvent, &mut ControlFlow),
+    pub fn run<F>(&self, mut func: F)
+        where
+            F: FnMut(WindowEvent, &mut ControlFlow),
     {
         unsafe {
             let mut control_flow = ControlFlow::Wait;
@@ -828,7 +828,7 @@ impl Window {
                     geometry.height,
                     geometry.depth,
                 )
-                .pixmap
+                    .pixmap
             }
         };
 
