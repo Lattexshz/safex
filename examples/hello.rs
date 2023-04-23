@@ -27,6 +27,8 @@ fn main() {
 
     window.set_window_title("Hello World");
 
+    println!("Screen width:{} height:{}", screen.width(), screen.height());
+
     let rect = Rectangle {
         x: 10,
         y: 10,
@@ -64,7 +66,7 @@ fn main() {
     };
 
     window.map();
-    window.run(|event, control_flow| match event {
+    window.run(|event, _control_flow| match event {
         WindowEvent::Expose => {
             window.set_window_background(white);
             window.fill_rectangle(rect);

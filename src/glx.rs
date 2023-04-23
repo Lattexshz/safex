@@ -1,10 +1,8 @@
 use crate::xlib::{
-    AsRaw, CWColormap, CWEventMask, ColorMap, ControlFlow, Display, ExposureMask, InputOutput,
-    KeyPressMask, Mask, Screen, Visual, VisualInfo, Window, WindowAttributesBuilder, WindowClass,
-    WindowEvent,
+    AsRaw, Display, Mask, Screen, Visual, VisualInfo, Window, WindowClass,
 };
-use std::ffi::{c_int, c_uchar, c_void, CString};
-use std::mem::MaybeUninit;
+use std::ffi::{c_int, c_uchar, CString};
+
 use std::ptr::addr_of_mut;
 use x11::glx::*;
 use x11::xlib::*;
@@ -77,11 +75,11 @@ pub struct GLXContext {
 }
 
 impl GLXContext {
-    pub fn create(display: &Display, vi: &VisualInfo, glc: Option<GLXContext>, flag: i32) -> Self {
+    pub fn create(display: &Display, vi: &VisualInfo, _glc: Option<GLXContext>, flag: i32) -> Self {
         let mut vi = XVisualInfo {
             visual: vi.visual.as_raw(),
             visualid: vi.visualid as VisualID,
-            screen: vi.screen.as_raw(),
+            screen: unsafe { XScreenNumberOfScreen(vi.screen.as_raw()) },
             depth: vi.depth,
             class: vi.class as c_int,
             red_mask: vi.red_mask,
@@ -114,8 +112,8 @@ impl AsRaw<x11::glx::GLXContext> for GLXContext {
 }
 
 pub fn glx_choose_visual(display: &Display, attrs: &mut [GLXAttribute]) -> Result<VisualInfo, ()> {
-    let mut vi = unsafe {
-        let mut vi = glXChooseVisual(display.as_raw(), 0, attrs.as_mut_ptr());
+    let vi = unsafe {
+        let vi = glXChooseVisual(display.as_raw(), 0, attrs.as_mut_ptr());
         if vi == std::ptr::null_mut() {
             return Err(());
         }
@@ -126,7 +124,7 @@ pub fn glx_choose_visual(display: &Display, attrs: &mut [GLXAttribute]) -> Resul
         VisualInfo {
             visual: Visual::from_raw((*vi).visual),
             visualid: (*vi).visualid as u64,
-            screen: Screen::from_raw((*vi).screen),
+            screen: Screen::default(display),
             depth: (*vi).depth as i32,
             class: (*vi).class as WindowClass,
             red_mask: (*vi).red_mask as Mask,

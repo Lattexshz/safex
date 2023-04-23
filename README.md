@@ -1,4 +1,5 @@
 # SafeX
+[![Lines of code](https://tokei.rs/b1/github/Lattexshz/SafeX)](https://github.com/Lattexshz/safex)    
  Safe x11 high level bindings
 
 ## Concept

@@ -146,9 +146,9 @@ fn main() {
         );
     }
 
-    window.map(&display);
+    window.map();
 
-    window.run(|event, control_flow| match event {
+    window.run(|event, _control_flow| match event {
         WindowEvent::Expose => {
             unsafe {
                 gl::Viewport(0, 0, 100, 100);

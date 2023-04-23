@@ -6,6 +6,8 @@ pub mod xcb;
 pub mod xcursor;
 #[cfg(feature = "xinput")]
 pub mod xinput;
+#[cfg(feature = "xkb")]
+pub mod xkb;
 #[cfg(feature = "xlib")]
 pub mod xlib;
 

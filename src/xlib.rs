@@ -148,7 +148,8 @@ impl ColorMap {
     }
 
     pub fn default(display: &Display, screen: &Screen) -> Self {
-        let cmap = unsafe { XDefaultColormap(display.display, screen.screen) };
+        let cmap =
+            unsafe { XDefaultColormap(display.display, XScreenNumberOfScreen(screen.screen)) };
         Self { cmap }
     }
 }
@@ -256,12 +257,12 @@ pub struct Pixel {
 
 impl Pixel {
     pub fn black(display: &Display, screen: &Screen) -> Self {
-        let pixel = unsafe { XBlackPixel(display.display, screen.screen) };
+        let pixel = unsafe { XBlackPixel(display.display, XScreenNumberOfScreen(screen.screen)) };
 
         Self { pixel }
     }
     pub fn white(display: &Display, screen: &Screen) -> Self {
-        let pixel = unsafe { XWhitePixel(display.display, screen.screen) };
+        let pixel = unsafe { XWhitePixel(display.display, XScreenNumberOfScreen(screen.screen)) };
 
         Self { pixel }
     }
@@ -331,22 +332,31 @@ pub struct Rectangle {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Screen {
-    screen: c_int,
+    screen: *mut x11::xlib::Screen,
 }
 
 impl Screen {
     pub fn default(display: &Display) -> Self {
-        let screen = unsafe { XDefaultScreen(display.display) };
+        let screen = unsafe { XScreenOfDisplay(display.display, 0) };
+
         Self { screen }
     }
 
-    pub fn from_raw(screen: c_int) -> Self {
+    pub fn width(&self) -> u32 {
+        unsafe { XWidthOfScreen(self.screen) as u32 }
+    }
+
+    pub fn height(&self) -> u32 {
+        unsafe { XHeightOfScreen(self.screen) as u32 }
+    }
+
+    pub fn from_raw(screen: *mut x11::xlib::Screen) -> Self {
         Self { screen }
     }
 }
 
-impl AsRaw<c_int> for Screen {
-    fn as_raw(&self) -> c_int {
+impl AsRaw<*mut x11::xlib::Screen> for Screen {
+    fn as_raw(&self) -> *mut x11::xlib::Screen {
         self.screen
     }
 }
@@ -358,7 +368,8 @@ pub struct Visual {
 
 impl Visual {
     pub fn default(display: &Display, screen: &Screen) -> Self {
-        let visual = unsafe { XDefaultVisual(display.display, screen.screen) };
+        let visual =
+            unsafe { XDefaultVisual(display.display, XScreenNumberOfScreen(screen.screen)) };
         Self { visual }
     }
 
@@ -443,8 +454,8 @@ pub struct Window {
 
 impl Window {
     pub fn root_window(display: &Display, screen: &Screen) -> Self {
-        let window = unsafe { XRootWindow(display.display, screen.screen) };
-        let gc = GC(unsafe { XDefaultGC(display.display, screen.screen) });
+        let window = unsafe { XRootWindow(display.display, XScreenNumberOfScreen(screen.screen)) };
+        let gc = GC(unsafe { XDefaultGC(display.display, XScreenNumberOfScreen(screen.screen)) });
         unsafe { XSelectInput(display.display, window, ExposureMask as c_long) };
         Self {
             window,
@@ -476,7 +487,10 @@ impl Window {
                 Some(p) => p.buffer,
             };
 
-            let gc = GC(XDefaultGC(display.display, screen.screen));
+            let gc = GC(XDefaultGC(
+                display.display,
+                XScreenNumberOfScreen(screen.screen),
+            ));
 
             let window = XCreateWindow(
                 display.display,
@@ -528,7 +542,10 @@ impl Window {
                 Some(p) => p.buffer,
             };
 
-            let gc = GC(XDefaultGC(display.display, screen.screen));
+            let gc = GC(XDefaultGC(
+                display.display,
+                XScreenNumberOfScreen(screen.screen),
+            ));
 
             let window = XCreateSimpleWindow(
                 display.display,
@@ -572,8 +589,8 @@ impl Window {
         height: u32,
         border_width: u32,
         depth: i32,
-        class: WindowClass,
-        visual: &VisualInfo,
+        _class: WindowClass,
+        _visual: &VisualInfo,
     ) -> Result<Self, ()> {
         let root = Window::root_window(display, screen);
         let cmap = ColorMap::create(display, &root, &vi.visual);
@@ -582,7 +599,7 @@ impl Window {
             .colormap(cmap)
             .event_mask(ExposureMask | KeyPressMask);
 
-        let gc = GC(unsafe { XDefaultGC(display.display, screen.screen) });
+        let gc = GC(unsafe { XDefaultGC(display.display, XScreenNumberOfScreen(screen.screen)) });
 
         let window = unsafe {
             XCreateWindow(
@@ -627,6 +644,17 @@ impl Window {
         unsafe {
             let title_str = CString::new(title).unwrap();
             XStoreName(self.display, self.window, title_str.as_ptr() as *mut c_char);
+        }
+    }
+
+    pub fn get_window_title(&self) -> String {
+        unsafe {
+            let mut name = std::mem::zeroed();
+            XFetchName(self.display, self.as_raw(), &mut name);
+            CStr::from_ptr(name as *const c_char)
+                .to_str()
+                .unwrap()
+                .to_string()
         }
     }
 
@@ -816,7 +844,10 @@ impl Window {
         window: c_ulong,
         buffer: Option<()>,
     ) -> Self {
-        let gc = GC(XDefaultGC(display.display, screen.screen));
+        let gc = GC(XDefaultGC(
+            display.display,
+            XScreenNumberOfScreen(screen.screen),
+        ));
         let geometry = _get_geometry(display.display, window);
         let buffer = match buffer {
             None => window,

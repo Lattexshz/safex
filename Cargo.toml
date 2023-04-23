@@ -1,6 +1,6 @@
 [package]
 name = "safex"
-version = "0.0.5"
+version = "0.0.5+2"
 edition = "2021"
 authors = ["Lattexshz"]
 description = "Safe x11 binding for rust"
@@ -10,16 +10,16 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+full = [ "glx","xinput","xcursor","xlib_xcb","xlib","xkb" ]
 glx = [ "x11/glx","xlib" ]
 xinput = ["x11/xinput"]
 xcursor = ["xlib","x11/xcursor"]
 xlib_xcb = ["xlib","x11/xlib_xcb"]
 xlib = [ "x11/xlib" ]
+xkb = [ "xlib" ]
 
 [dependencies]
 x11 = { version = "2.21.0" }
 
 [dev-dependencies]
-winit = "0.28.3"
 gl = "0.14.0"
-raw-window-handle = "0.5.1"
